@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { BilliardsEngine } from './game/engine';
+import { AIController, DIFFICULTIES } from './game/ai';
 import type { UiSnapshot, WinInfo } from './game/types';
 import DustLayer from './components/DustLayer';
 import Header from './components/Header';
 import PlayerCard from './components/PlayerCard';
 import TableZone from './components/TableZone';
 import Modals from './components/Modals';
+import StartScreen from './components/StartScreen';
 
 const INITIAL_UI: UiSnapshot = {
   turn: 0,
@@ -28,8 +30,11 @@ export default function App() {
   const powerValRef = useRef<HTMLElement>(null);
 
   const engineRef = useRef<BilliardsEngine | null>(null);
+  const aiRef = useRef<AIController | null>(null);
+
   const rulesOpenRef = useRef(false);
   const winOpenRef = useRef(false);
+  const startOpenRef = useRef(true);
 
   const [ui, setUi] = useState<UiSnapshot>(INITIAL_UI);
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -37,11 +42,14 @@ export default function App() {
   const [winInfo, setWinInfo] = useState<WinInfo | null>(null);
   const [guideOn, setGuideOn] = useState(true);
   const [soundOn, setSoundOn] = useState(true);
+  const [startOpen, setStartOpen] = useState(true);
+  const [aiLabel, setAiLabel] = useState<string | null>(null);
 
   useEffect(() => { rulesOpenRef.current = rulesOpen; }, [rulesOpen]);
   useEffect(() => { winOpenRef.current = winOpen; }, [winOpen]);
+  useEffect(() => { startOpenRef.current = startOpen; }, [startOpen]);
 
-  // 胜利彩纸(直接操作 DOM,与原版一致)
+  // 彩纸(与原版一致,直接操作 DOM)
   const launchConfetti = () => {
     for (let i = 0; i < 70; i++) {
       const d = document.createElement('div');
@@ -56,32 +64,63 @@ export default function App() {
     }
   };
 
+  const isModalOpen = () => startOpenRef.current || rulesOpenRef.current || winOpenRef.current;
+
   useEffect(() => {
     if (!canvasRef.current || !powerFillRef.current || !powerValRef.current) return;
     const engine = new BilliardsEngine({
       canvas: canvasRef.current,
       powerFill: powerFillRef.current,
       powerVal: powerValRef.current,
-      isModalOpen: () => rulesOpenRef.current || winOpenRef.current,
+      isModalOpen,
       cb: {
-        onUi: setUi,
+        onUi: (snap) => {
+          setUi(snap);
+          aiRef.current?.maybeAct(snap);
+        },
         onGameOver: (info) => { setWinInfo(info); setWinOpen(true); },
         onConfetti: launchConfetti,
       },
     });
     engineRef.current = engine;
+    aiRef.current = new AIController(engine, 1, isModalOpen);
     engine.start();
-    return () => { engine.destroy(); engineRef.current = null; };
+    return () => {
+      aiRef.current?.destroy();
+      engine.destroy();
+      aiRef.current = null;
+      engineRef.current = null;
+    };
   }, []);
 
-  // Esc 关闭所有弹窗
+  // Esc 关闭弹窗
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setRulesOpen(false); setWinOpen(false); }
+      if (e.key === 'Escape') {
+        setRulesOpen(false);
+        if (winOpenRef.current) return; // 胜负弹窗由按钮关闭
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
+
+  // 开始界面按钮
+  const startPvP = () => {
+    aiRef.current?.setEnabled(false);
+    const eng = engineRef.current;
+    if (eng) eng.players[1].name = '玩家二';
+    setAiLabel(null);
+    setStartOpen(false);
+  };
+  const startPvAI = (difficulty: 'easy' | 'medium' | 'hard') => {
+    const ai = aiRef.current;
+    if (ai) { ai.setEnabled(true); ai.setDifficulty(DIFFICULTIES[difficulty]); }
+    const eng = engineRef.current;
+    if (eng) eng.players[1].name = '电脑·玩家二';
+    setAiLabel(DIFFICULTIES[difficulty].label);
+    setStartOpen(false);
+  };
 
   // 按钮回调
   const handleRules = () => setRulesOpen(true);
@@ -103,6 +142,7 @@ export default function App() {
         <Header
           guideOn={guideOn}
           soundOn={soundOn}
+          aiLabel={aiLabel}
           onRules={handleRules}
           onToggleGuide={handleToggleGuide}
           onToggleSound={handleToggleSound}
@@ -123,6 +163,9 @@ export default function App() {
         onAgain={handleAgain}
         onCloseWin={handleCloseWin}
       />
+      {startOpen && (
+        <StartScreen onStartPvP={startPvP} onStartPvAI={startPvAI} />
+      )}
     </>
   );
 }
