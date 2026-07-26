@@ -44,10 +44,16 @@ export default function App() {
   const [soundOn, setSoundOn] = useState(true);
   const [startOpen, setStartOpen] = useState(true);
   const [aiLabel, setAiLabel] = useState<string | null>(null);
+  const firstPickDoneRef = useRef(false);
 
   useEffect(() => { rulesOpenRef.current = rulesOpen; }, [rulesOpen]);
   useEffect(() => { winOpenRef.current = winOpen; }, [winOpen]);
   useEffect(() => { startOpenRef.current = startOpen; }, [startOpen]);
+
+  // 任意模态关闭后,重新评估 AI 是否该动作(之前因模态遮挡而跳过的快照可被重试)
+  useEffect(() => {
+    if (!startOpen && !rulesOpen && !winOpen) aiRef.current?.poke();
+  }, [startOpen, rulesOpen, winOpen]);
 
   // 彩纸(与原版一致,直接操作 DOM)
   const launchConfetti = () => {
@@ -78,7 +84,7 @@ export default function App() {
           setUi(snap);
           aiRef.current?.maybeAct(snap);
         },
-        onGameOver: (info) => { setWinInfo(info); setWinOpen(true); },
+        onGameOver: (info) => { aiRef.current?.cancelPending(); setWinInfo(info); setWinOpen(true); },
         onConfetti: launchConfetti,
       },
     });
@@ -105,29 +111,34 @@ export default function App() {
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
-  // 开始界面按钮
-  const startPvP = () => {
-    aiRef.current?.setEnabled(false);
-    const eng = engineRef.current;
-    if (eng) eng.players[1].name = '玩家二';
-    setAiLabel(null);
-    setStartOpen(false);
-  };
-  const startPvAI = (difficulty: 'easy' | 'medium' | 'hard') => {
+  // 开始界面按钮:选择模式后,首次开局直接进入(游戏已运行);重选时重开一局
+  const applyModeAndStart = (aiMode: boolean, difficulty?: 'easy' | 'medium' | 'hard') => {
     const ai = aiRef.current;
-    if (ai) { ai.setEnabled(true); ai.setDifficulty(DIFFICULTIES[difficulty]); }
     const eng = engineRef.current;
-    if (eng) eng.players[1].name = '电脑·玩家二';
-    setAiLabel(DIFFICULTIES[difficulty].label);
+    ai?.cancelPending();
+    if (aiMode && difficulty) {
+      ai?.setEnabled(true);
+      ai?.setDifficulty(DIFFICULTIES[difficulty]);
+      if (eng) eng.players[1].name = '电脑·玩家二';
+      setAiLabel(DIFFICULTIES[difficulty].label);
+    } else {
+      ai?.setEnabled(false);
+      if (eng) eng.players[1].name = '玩家二';
+      setAiLabel(null);
+    }
+    if (firstPickDoneRef.current) eng?.restart();  // 重选模式则重新摸球开始
+    firstPickDoneRef.current = true;
     setStartOpen(false);
   };
+  const startPvP = () => applyModeAndStart(false);
+  const startPvAI = (d: 'easy' | 'medium' | 'hard') => applyModeAndStart(true, d);
 
   // 按钮回调
-  const handleRules = () => setRulesOpen(true);
+  const handleRules = () => { aiRef.current?.cancelPending(); setRulesOpen(true); };
   const handleCloseRules = () => setRulesOpen(false);
-  const handleAgain = () => { setWinOpen(false); engineRef.current?.restart(); };
+  const handleAgain = () => { setWinOpen(false); aiRef.current?.cancelPending(); setStartOpen(true); };
   const handleCloseWin = () => setWinOpen(false);
-  const handleRestart = () => engineRef.current?.restart();
+  const handleRestart = () => { aiRef.current?.cancelPending(); setStartOpen(true); };
   const handleToggleGuide = () => {
     setGuideOn((v) => { const nv = !v; engineRef.current?.setGuide(nv); return nv; });
   };
@@ -164,7 +175,12 @@ export default function App() {
         onCloseWin={handleCloseWin}
       />
       {startOpen && (
-        <StartScreen onStartPvP={startPvP} onStartPvAI={startPvAI} />
+        <StartScreen
+          isRestart={firstPickDoneRef.current}
+          currentMode={aiLabel}
+          onStartPvP={startPvP}
+          onStartPvAI={startPvAI}
+        />
       )}
     </>
   );

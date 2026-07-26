@@ -3,7 +3,7 @@ import {
   FRICTION, BALL_REST, STOP_V, groupOf,
 } from './constants';
 import type { BilliardsEngine } from './engine';
-import type { Ball, PlayerView, UiSnapshot } from './types';
+import type { Ball, UiSnapshot } from './types';
 
 const DEG = Math.PI / 180;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -86,7 +86,9 @@ export class AIController {
   diff: AIDifficulty = DIFFICULTIES.medium;
   enabled = false;
   private isModalOpen: () => boolean;
-  private lastActedUiKey = -1;
+  private lastUi: UiSnapshot | null = null;
+  /** 已为该 uiKey 排进了动作的标志;动作执行完成或被取消后置为 -1 */
+  private scheduledUiKey = -1;
   private timers: ReturnType<typeof setTimeout>[] = [];
 
   constructor(eng: BilliardsEngine, index: number, isModalOpen: () => boolean) {
@@ -101,24 +103,39 @@ export class AIController {
   cancelPending() {
     this.timers.forEach((t) => clearTimeout(t));
     this.timers = [];
-    this.lastActedUiKey = -1;
+    this.scheduledUiKey = -1;
   }
   destroy() { this.cancelPending(); }
 
   /** 由 App 在每次引擎发射 UI 快照时调用 */
   maybeAct(ui: UiSnapshot) {
-    if (!this.enabled) { this.lastActedUiKey = ui.uiKey; return; }
-    if (ui.turn !== this.index) { this.lastActedUiKey = ui.uiKey; return; }
-    if (this.isModalOpen()) { this.lastActedUiKey = ui.uiKey; return; }
-    if (ui.state !== 'place' && ui.state !== 'aim') { this.lastActedUiKey = ui.uiKey; return; }
-    if (ui.uiKey === this.lastActedUiKey) return;
-    this.lastActedUiKey = ui.uiKey;
-
+    this.lastUi = ui;
+    if (!this.enabled) return;                 // 模式不是 AI,不动作
+    if (ui.turn !== this.index) return;         // 不是 AI 回合
+    if (ui.state !== 'place' && ui.state !== 'aim') return;
+    if (this.isModalOpen()) return;             // 有模态遮挡时不消费,等待关闭后重试
+    if (ui.uiKey === this.scheduledUiKey) return; // 同一快照已排进
+    this.scheduledUiKey = ui.uiKey;
+    this.clearTimers();
     if (ui.state === 'place') {
       this.timers.push(setTimeout(() => this.actPlace(), this.diff.placeMs));
     } else {
       this.timers.push(setTimeout(() => this.actShot(), this.diff.thinkMs));
     }
+  }
+
+  /** 模态关闭后由 App 调用,用最近一次快照重新评估是否该 AI 动手 */
+  poke() {
+    if (this.lastUi) {
+      // 重置已排标志,使同一快照可被重新调度(之前因模态打开而跳过)
+      this.scheduledUiKey = -1;
+      this.maybeAct(this.lastUi);
+    }
+  }
+
+  private clearTimers() {
+    this.timers.forEach((t) => clearTimeout(t));
+    this.timers = [];
   }
 
   /* ============ 合法目标 ============ */
@@ -324,20 +341,29 @@ export class AIController {
   /* ============ 执行 ============ */
   private actPlace() {
     const eng = this.eng;
-    if (!this.enabled || eng.state !== 'place' || eng.turn !== this.index) return;
+    // 重入/状态守卫:若条件不再满足(被模态打开、重新开局等打断)则放弃,交由 poke 重试
+    if (!this.enabled || this.isModalOpen() || eng.state !== 'place' || eng.turn !== this.index) {
+      this.scheduledUiKey = -1;
+      return;
+    }
+    this.scheduledUiKey = -1;
     let pos: Vec | null = null;
     if (!eng.breakShotFlag) pos = this.planPlacement();
     // 默认保持引擎自带的厨房区 placePos;自由球时优选拍摄点
     if (pos) eng.setPlaceVector(pos);
     this.timers.push(setTimeout(() => {
-      if (!this.enabled || eng.state !== 'place' || eng.turn !== this.index) return;
+      if (!this.enabled || this.isModalOpen() || eng.state !== 'place' || eng.turn !== this.index) return;
       eng.placeCuePublic();
     }, 80));
   }
 
   private actShot() {
     const eng = this.eng;
-    if (!this.enabled || eng.state !== 'aim' || eng.turn !== this.index) return;
+    if (!this.enabled || this.isModalOpen() || eng.state !== 'aim' || eng.turn !== this.index) {
+      this.scheduledUiKey = -1;
+      return;
+    }
+    this.scheduledUiKey = -1;
     let plan: Plan | null;
     if (eng.breakShotFlag) plan = this.planBreak();
     else plan = this.planShot();
