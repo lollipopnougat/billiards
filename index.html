@@ -96,15 +96,32 @@ body{
 .pc-tray{display:flex;gap:5px;flex-wrap:wrap;margin-top:11px;min-height:27px}
 .mini{width:26px;height:26px;border-radius:50%;position:relative;display:grid;place-items:center;
   box-shadow:inset -2px -3px 5px rgba(0,0,0,.45), inset 2px 2px 4px rgba(255,255,255,.35), 0 2px 4px rgba(0,0,0,.5);
-  transition:transform .3s, filter .3s;animation:popIn .35s cubic-bezier(.34,1.56,.64,1) backwards}
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1), filter .3s;
+  animation:popIn .35s cubic-bezier(.34,1.56,.64,1) backwards}
+.mini:hover{transform:scale(1.18) translateY(-2px)}
 @keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
 .mini .num{width:12px;height:12px;border-radius:50%;background:#f7f3e6;color:#241a10;font:700 8px/12px var(--font-body);text-align:center}
-.mini.stripe{background:#f2ecdc}
+/* 实色球:整颗球着色 + 高光/边缘球面渐变 */
+.mini.solid{
+  background-color:var(--mc);
+  background-image:
+    radial-gradient(circle at 33% 26%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 40%),
+    radial-gradient(circle at 50% 42%, transparent 0 52%, rgba(0,0,0,.42) 100%);
+}
+/* 花色球:白底 + 中部色带 */
+.mini.stripe{
+  background-color:#f2ecdc;
+  background-image:
+    radial-gradient(circle at 33% 26%, rgba(255,255,255,.95) 0 8%, rgba(255,255,255,0) 40%),
+    radial-gradient(circle at 50% 42%, transparent 0 52%, rgba(0,0,0,.35) 100%);
+}
 .mini.stripe::before{content:'';position:absolute;left:0;right:0;top:24%;bottom:24%;background:var(--mc)}
 .mini .num{position:relative;z-index:1}
 .mini.potted{filter:grayscale(.7) brightness(.5);transform:scale(.85)}
+.mini.potted:hover{transform:scale(.95)}
 .mini.potted::after{content:'✓';position:absolute;right:-3px;top:-5px;font-size:10px;color:var(--brass);z-index:2}
 .mini.ph{background:#2e2314;box-shadow:none;color:#6b5636;font-size:11px}
+.mini.ph:hover{transform:none}
 .mini.eight{background:radial-gradient(circle at 35% 30%,#55555e,#141418 60%)}
 .mini.eight.target{animation:targetPulse 1s infinite}
 @keyframes targetPulse{50%{box-shadow:0 0 12px 3px rgba(240,178,62,.8), inset -2px -3px 5px rgba(0,0,0,.45)}}
@@ -116,7 +133,7 @@ body{
 /* 球台区 */
 .table-zone{position:relative}
 
-/* 吊灯:悬挂于球台正上方,不再遮挡回合横幅 */
+/* 吊灯:悬挂于球台正上方,不遮挡回合横幅 */
 .lamp{position:absolute;left:50%;top:-50px;transform:translateX(-50%);z-index:6;pointer-events:none}
 .lamp .cord{width:2px;height:22px;background:linear-gradient(#000,#3a2a15);margin:0 auto}
 .lamp .shade{width:158px;height:42px;position:relative;border-radius:10px 10px 70px 70px/10px 10px 34px 34px;
@@ -525,7 +542,7 @@ function allStopped(){for(const b of balls){
 function beginPlacement(kitchen){
   const c=cue();c.active=false;c.dead=false;c.sink=null;c.vx=c.vy=0;
   kitchenOnly=kitchen;state='place';
-  placePos={x:kitchen?HEAD_X-80:HEAD_X-80,y:MID_Y};
+  placePos={x:HEAD_X-80,y:MID_Y};
   canvas.classList.add('placing');updateUI();
 }
 function resolveShot(){
@@ -809,15 +826,17 @@ function setStatus(text,kind){
 function buildTray(i){
   const p=players[i],tray=$('tray'+i);tray.innerHTML='';
   const mk=(cls,mc,num,potted,delay)=>{
-    const d=document.createElement('div');d.className='mini '+cls+(potted?' potted':'');
-    if(mc)d.style.setProperty('--mc',mc);
+    const d=document.createElement('div');
+    d.className='mini '+cls+(potted?' potted':'');
+    if(mc)d.style.setProperty('--mc',mc);   // 实色/花色小球的颜色变量
     if(num!=null){const s=document.createElement('span');s.className='num';s.textContent=num;d.appendChild(s);}
     else d.textContent='?';
     d.style.animationDelay=(delay||0)+'ms';tray.appendChild(d);};
   if(!p.group){for(let k=0;k<7;k++)mk('ph',null,null,false,k*30);return;}
   GROUP_IDS[p.group].forEach((id,k)=>{
     const b=balls.find(x=>x.id===id);
-    mk(p.group==='stripe'?'stripe':'',BALL_COLORS[p.group==='stripe'?id-8:id],id,b?b.dead:false,k*30);});
+    const col=p.group==='stripe'?BALL_COLORS[id-8]:BALL_COLORS[id];
+    mk(p.group==='stripe'?'stripe':'solid', col, id, b?b.dead:false, k*30);});
   const eb=balls.find(x=>x.id===8),onE=isOnEight(p);
   const d=document.createElement('div');
   d.className='mini eight'+(onE?' target':'')+(eb&&eb.dead?' potted':'');
