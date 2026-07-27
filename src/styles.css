@@ -227,3 +227,64 @@ canvas#table.placing{cursor:pointer}
 .btn.ai.master{border-color:#7a3aa0;color:#e6b8ff}
 .btn.ai.master:hover{border-color:#b25cf0;box-shadow:0 5px 0 #17100a,0 0 18px rgba(178,92,240,.35)}
 .start-hint{font-size:11px;color:#8a7350;margin-top:14px;letter-spacing:1px;line-height:1.6}
+
+/* ===== 触屏/手机端优化 ===== */
+html{ -webkit-tap-highlight-color:transparent; }
+.btn{ -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+canvas#table{ -webkit-tap-highlight-color:transparent; }
+/* 中等窄屏:按钮与分栏更紧凑 */
+@media(max-width:900px){
+  .room{ padding:14px 14px 24px }
+  .sign h1{ font-size:28px }
+  .sign p{ letter-spacing:3px }
+  .btn{ padding:8px 12px; font-size:14px }
+  .turn-banner{ margin-bottom:22px; padding:7px 12px }
+  .tb-mid{ font-size:18px }
+  .console{ gap:12px; padding:9px 12px }
+  .power-bar{ width:170px }
+}
+/* 手机端:单栏布局,压缩留白,可滚动弹窗 */
+@media(max-width:640px){
+  .room{ padding:12px 12px 20px }
+  .marquee{ gap:10px; padding:2px 2px 10px }
+  .sign{ gap:11px }
+  .badge8{ width:46px; height:46px }
+  .badge8 i{ width:22px; height:22px; font-size:13px }
+  .sign h1{ font-size:24px; letter-spacing:2px }
+  .sign p{ font-size:10px; letter-spacing:2px }
+  .header-actions{ gap:8px }
+  .btn{ padding:8px 11px; font-size:13px; letter-spacing:1.5px }
+  .btn.primary{ font-size:15px; padding:10px 20px }
+  .divider{ margin:1px 2px 12px }
+  /* 玩家卡片更紧凑,避免占据过多纵向空间 */
+  .player-card{ padding:12px 12px 11px }
+  .pc-name{ font-size:18px }
+  .pc-tray{ gap:4px; margin-top:9px }
+  .mini{ width:23px; height:23px }
+  .pc-meta{ font-size:11px; margin-top:9px }
+  .turn-banner{ margin-bottom:18px; padding:6px 10px; flex-wrap:wrap }
+  .tb-score{ font-size:15px }
+  .tb-score b{ font-size:18px }
+  .tb-mid{ font-size:16px }
+  .tb-side{ display:none }
+  .console{ flex-direction:column; align-items:stretch; gap:9px; padding:9px 11px }
+  .power-wrap{ justify-content:space-between; width:100% }
+  .power-bar{ flex:1; width:auto; max-width:100% }
+  .pw-val{ width:auto; min-width:44px; text-align:right }
+  .status{ min-width:0; width:100%; font-size:13px }
+  .hint-line{ font-size:11px; letter-spacing:.5px; line-height:1.5; margin-top:9px }
+  .lamp{ top:-40px }
+  .lamp .shade{ width:130px; height:36px }
+  .lamp .glow{ width:520px; height:280px }
+}
+/* 极窄手机:开球选择按钮换行,弹窗自适应 */
+@media(max-width:380px){
+  .sign h1{ font-size:21px }
+  .header-actions .btn{ padding:7px 9px; font-size:12px }
+  .start-actions.ai{ flex-wrap:wrap; gap:8px }
+  .start-actions.ai .btn{ flex:1 1 38%; min-width:96px }
+  .btn.ai.master,.btn.ai.hard{ flex-basis:40% }
+}
+/* 弹窗在小屏可滚动,避免内容溢出 */
+.modal{ max-height:88vh; overflow-y:auto; -webkit-overflow-scrolling:touch }
+.rules-modal ul{ padding-right:2px }
