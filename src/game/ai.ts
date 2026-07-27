@@ -15,29 +15,42 @@ export interface AIDifficulty {
   cutMaxRad: number;       // 视为"可尝试进袋"的最大切球角
   middlePocketPenalty: number;
   proactiveSafety: boolean;  // 无理想进袋时主动出安全球
-  washRiskAvoid: boolean;     // 规避白球洗袋的候选
-  randomPickTopN: number;     // >1 时在最优 N 个候选里随机抽
+  washRiskAvoid: boolean;    // 规避白球洗袋的候选
+  randomPickTopN: number;    // >1 时在最优 N 个候选里随机抽
+  positionWeight: number;    // 白球落点走位的权重(越大越重位置)
+  lookahead: boolean;        // 是否用一步前瞻评估连杆可能性
+  lookBonus: number;        // 有后续杆时从分值中减去的奖励
+  lookPenalty: number;       // 没后续杆时给分值加的罚分
   thinkMs: number;
   placeMs: number;
   chargeViewMs: number;
   breakPower: number;
 }
 
-export const DIFFICULTIES: Record<'easy' | 'medium' | 'hard', AIDifficulty> = {
+export const DIFFICULTIES: Record<'easy' | 'medium' | 'hard' | 'master', AIDifficulty> = {
   easy: {
-    label: '简单', angleNoiseRad: 3.0 * DEG, powerNoise: 0.13, cutMaxRad: 70 * DEG,
+    label: '简单', angleNoiseRad: 1.7 * DEG, powerNoise: 0.09, cutMaxRad: 64 * DEG,
     middlePocketPenalty: 0.7, proactiveSafety: false, washRiskAvoid: false,
-    randomPickTopN: 3, thinkMs: 480, placeMs: 320, chargeViewMs: 360, breakPower: 0.78,
+    randomPickTopN: 2, positionWeight: 0, lookahead: false, lookBonus: 0, lookPenalty: 0,
+    thinkMs: 480, placeMs: 300, chargeViewMs: 360, breakPower: 0.78,
   },
   medium: {
-    label: '中等', angleNoiseRad: 1.3 * DEG, powerNoise: 0.06, cutMaxRad: 62 * DEG,
+    label: '中等', angleNoiseRad: 0.95 * DEG, powerNoise: 0.05, cutMaxRad: 58 * DEG,
     middlePocketPenalty: 1.0, proactiveSafety: true, washRiskAvoid: true,
-    randomPickTopN: 1, thinkMs: 640, placeMs: 400, chargeViewMs: 420, breakPower: 0.82,
+    randomPickTopN: 1, positionWeight: 0.7, lookahead: false, lookBonus: 0, lookPenalty: 0,
+    thinkMs: 640, placeMs: 400, chargeViewMs: 420, breakPower: 0.82,
   },
   hard: {
-    label: '困难', angleNoiseRad: 0.55 * DEG, powerNoise: 0.03, cutMaxRad: 55 * DEG,
+    label: '困难', angleNoiseRad: 0.45 * DEG, powerNoise: 0.025, cutMaxRad: 50 * DEG,
     middlePocketPenalty: 1.2, proactiveSafety: true, washRiskAvoid: true,
-    randomPickTopN: 1, thinkMs: 800, placeMs: 500, chargeViewMs: 460, breakPower: 0.85,
+    randomPickTopN: 1, positionWeight: 1.6, lookahead: true, lookBonus: 14, lookPenalty: 6,
+    thinkMs: 740, placeMs: 480, chargeViewMs: 450, breakPower: 0.84,
+  },
+  master: {
+    label: '大师', angleNoiseRad: 0.2 * DEG, powerNoise: 0.012, cutMaxRad: 44 * DEG,
+    middlePocketPenalty: 1.4, proactiveSafety: true, washRiskAvoid: true,
+    randomPickTopN: 1, positionWeight: 2.6, lookahead: true, lookBonus: 22, lookPenalty: 9,
+    thinkMs: 860, placeMs: 520, chargeViewMs: 520, breakPower: 0.86,
   },
 };
 
@@ -52,7 +65,11 @@ interface ShotEval {
   blocked: boolean;
   washRisk: boolean;
   score: number;
+  whiteEnd: Vec;     // 白球估算落点
+  scoreLk: number;   // 含前瞻的最终分值(用于排序)
+  othersRef: Ball[]; // 该杆之后的合法目标集
 }
+
 interface Plan {
   kind: 'pocket' | 'safety' | 'break';
   aim: Vec;
@@ -87,7 +104,6 @@ export class AIController {
   enabled = false;
   private isModalOpen: () => boolean;
   private lastUi: UiSnapshot | null = null;
-  /** 已为该 uiKey 排进了动作的标志;动作执行完成或被取消后置为 -1 */
   private scheduledUiKey = -1;
   private timers: ReturnType<typeof setTimeout>[] = [];
 
@@ -101,8 +117,7 @@ export class AIController {
   setDifficulty(d: AIDifficulty) { this.diff = d; }
 
   cancelPending() {
-    this.timers.forEach((t) => clearTimeout(t));
-    this.timers = [];
+    this.clearTimers();
     this.scheduledUiKey = -1;
   }
   destroy() { this.cancelPending(); }
@@ -110,11 +125,11 @@ export class AIController {
   /** 由 App 在每次引擎发射 UI 快照时调用 */
   maybeAct(ui: UiSnapshot) {
     this.lastUi = ui;
-    if (!this.enabled) return;                 // 模式不是 AI,不动作
-    if (ui.turn !== this.index) return;         // 不是 AI 回合
+    if (!this.enabled) return;
+    if (ui.turn !== this.index) return;
     if (ui.state !== 'place' && ui.state !== 'aim') return;
-    if (this.isModalOpen()) return;             // 有模态遮挡时不消费,等待关闭后重试
-    if (ui.uiKey === this.scheduledUiKey) return; // 同一快照已排进
+    if (this.isModalOpen()) return;
+    if (ui.uiKey === this.scheduledUiKey) return;
     this.scheduledUiKey = ui.uiKey;
     this.clearTimers();
     if (ui.state === 'place') {
@@ -124,10 +139,8 @@ export class AIController {
     }
   }
 
-  /** 模态关闭后由 App 调用,用最近一次快照重新评估是否该 AI 动手 */
   poke() {
     if (this.lastUi) {
-      // 重置已排标志,使同一快照可被重新调度(之前因模态打开而跳过)
       this.scheduledUiKey = -1;
       this.maybeAct(this.lastUi);
     }
@@ -152,8 +165,22 @@ export class AIController {
     return out;
   }
 
+  /** 该杆进袋后的下一批合法目标(用于走位/前瞻) */
+  othersAfter(t: Ball, legal: Ball[]): Ball[] {
+    if (legal.length <= 1 || t.id === 8) return [];
+    const others = legal.filter((o) => o.id !== t.id);
+    const p = this.eng.players[this.eng.turn];
+    if (p.group != null && others.length === 0) {
+      // t 是最后一颗己方组球,下一杆即 8 号
+      const eight = this.eng.balls.find((b) => b.id === 8);
+      if (eight && eight.active && !eight.dead && !eight.sink) return [eight];
+      return [];
+    }
+    return others;
+  }
+
   /* ============ 候选进袋评估 ============ */
-  evaluateShot(t: Ball, p: { x: number; y: number; r: number }, cx: number, cy: number): ShotEval | null {
+  evaluateShot(t: Ball, p: { x: number; y: number; r: number }, cx: number, cy: number, others: Ball[]): ShotEval | null {
     const eng = this.eng;
     const dpx = p.x - t.x, dpy = p.y - t.y;
     const dpm = Math.hypot(dpx, dpy) || 1;
@@ -178,32 +205,64 @@ export class AIController {
     const cutBoost = 1 + (cutRad / this.diff.cutMaxRad) * 0.45;
     const power = clamp(basePower * cutBoost, 0.28, 0.88);
 
-    // 白球碰撞后走向:aim - (aim·D)*D
+    // 白球碰撞后走向:aim - (aim·D)*D(切线方向)
     const dot = aimx * Dx + aimy * Dy;
     let outx = aimx - dot * Dx, outy = aimy - dot * Dy;
     const om = Math.hypot(outx, outy);
     if (om > 1e-4) { outx /= om; outy /= om; }
     const vpost = (6 + power * 22) * Math.sin(cutRad) * BALL_REST;
-    let washRisk = false;
+
+    // 用一段积分模拟白球进袋后走向:既判洗袋,又得到落点
+    let wx = gx, wy = gy, v = vpost, guard = 0, washRisk = false;
     if (om > 1e-4 && vpost > STOP_V * 1.5) {
-      // 沿直线模拟滑动至停止,如经过袋口则判定洗袋风险
-      let x = gx, y = gy, v = vpost, guard = 0;
       while (v > STOP_V && guard < 4000) {
-        x += outx * v; y += outy * v;
-        if (x < L || x > R || y < T || y > B) break;
-        if (endpointNearPocket(x, y)) { washRisk = true; break; }
-        v = v * FRICTION - 0.0075;
-        guard++;
+        wx += outx * v; wy += outy * v;
+        if (endpointNearPocket(wx, wy)) { washRisk = true; break; }
+        v = v * FRICTION - 0.0075; guard++;
       }
     }
+    const whiteEnd: Vec = { x: wx, y: wy };
 
+    // 基础分(越小越好)
     const isMiddle = Math.abs(p.x - (L + R) / 2) < 1;
     let score = cutRad * 8 + totalDist * 0.012;
     if (isMiddle) score += this.diff.middlePocketPenalty * 4;
     if (blocked) score += 60;
-    if (this.diff.washRiskAvoid && washRisk) score += 25;
+    if (washRisk && this.diff.washRiskAvoid) score += 30;
 
-    return { target: t, pocket: p, aim: { x: aimx, y: aimy }, power, cutRad, totalDist, blocked, washRisk, score };
+    // 走位项:尽量落在离其它合法目标更近、且线路清空的位置
+    if (this.diff.positionWeight > 0 && others.length > 0 && !blocked) {
+      let minClear = Infinity, hasClear = false;
+      for (const o of others) {
+        if (!eng.segmentBlocked(whiteEnd.x, whiteEnd.y, o.x, o.y, new Set([0, o.id]))) {
+          const dd = Math.hypot(o.x - whiteEnd.x, o.y - whiteEnd.y);
+          if (dd < minClear) minClear = dd;
+          hasClear = true;
+        }
+      }
+      if (hasClear) score += this.diff.positionWeight * (minClear / 220);
+      else score += this.diff.positionWeight * 4.5; // 落点对哪个目标都被挡,惩罚
+    }
+
+    return {
+      target: t, pocket: p, aim: { x: aimx, y: aimy }, power,
+      cutRad, totalDist, blocked, washRisk, score,
+      whiteEnd, scoreLk: score, othersRef: others,
+    };
+  }
+
+  /** 从落点出发,是否存在一个可进的下一杆(一步前瞻) */
+  nextPotFrom(ext: Vec, others: Ball[]): boolean {
+    for (const o of others) {
+      if (this.eng.segmentBlocked(ext.x, ext.y, o.x, o.y, new Set([0, o.id]))) continue;
+      for (const pp of POCKETS) {
+        const ev = this.evaluateShot(o, pp, ext.x, ext.y, []);
+        if (ev && !ev.blocked && !ev.washRisk) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   /* ============ 出杆决策 ============ */
@@ -214,22 +273,40 @@ export class AIController {
     const legal = this.legalTargets();
     if (legal.length === 0) return null;
 
-    // 用力收集所有可进袋候选
+    // 收集所有可进袋候选(含走位分)
     const evals: ShotEval[] = [];
     for (const t of legal) {
+      const others = this.othersAfter(t, legal);
       for (const p of POCKETS) {
-        const ev = this.evaluateShot(t, p, cue.x, cue.y);
+        const ev = this.evaluateShot(t, p, cue.x, cue.y, others);
         if (ev) evals.push(ev);
       }
     }
-    // 筛选"可行"
     const feasible = evals.filter((e) => !e.blocked && (!e.washRisk || !this.diff.washRiskAvoid));
     if (feasible.length > 0) {
-      feasible.sort((a, b) => a.score - b.score);
+      // 一步前瞻:在最优前若干个里重新打分,有后续杆给奖励、没有给罚分
+      let pool: ShotEval[];
+      if (this.diff.lookahead) {
+        feasible.sort((a, b) => a.score - b.score);
+        pool = feasible.slice(0, Math.min(8, feasible.length));
+        for (const ev of pool) {
+          if (ev.othersRef.length > 0 && !ev.blocked) {
+            if (this.nextPotFrom(ev.whiteEnd, ev.othersRef)) ev.scoreLk = ev.score - this.diff.lookBonus;
+            else ev.scoreLk = ev.score + this.diff.lookPenalty;
+          } else {
+            ev.scoreLk = ev.score;
+          }
+        }
+        pool.sort((a, b) => a.scoreLk - b.scoreLk);
+      } else {
+        feasible.sort((a, b) => a.score - b.score);
+        pool = feasible;
+      }
+
       let chosen: ShotEval;
       const n = Math.max(1, this.diff.randomPickTopN);
-      if (n >= feasible.length) chosen = feasible[Math.floor(Math.random() * feasible.length)];
-      else chosen = feasible[Math.floor(Math.random() * n)];
+      const take = Math.min(n, pool.length);
+      chosen = pool[Math.floor(Math.random() * take)];
       const aim = perturbAim(chosen.aim, this.diff.angleNoiseRad);
       const power = clamp(chosen.power + gaussian(this.diff.powerNoise), 0.28, 0.9);
       return { kind: 'pocket', aim, power };
@@ -240,7 +317,6 @@ export class AIController {
       const safe = this.planSafety(legal);
       if (safe) return safe;
     }
-    // 兜底:瞄准最近的合法目标中心,低力度触碰避免空杆犯规
     return this.fallbackTap(legal);
   }
 
@@ -248,23 +324,17 @@ export class AIController {
     const eng = this.eng;
     const cue = eng.cue();
     if (!cue) return null;
-    // 找一个 cue→目标中心 路径清空 的合法球,瞄准其中心低力度直球
     const cands: { t: Ball; aim: Vec; power: number; dist: number }[] = [];
     for (const t of legal) {
       if (eng.segmentBlocked(cue.x, cue.y, t.x, t.y, new Set([t.id, 0]))) continue;
       const ax = t.x - cue.x, ay = t.y - cue.y;
       const am = Math.hypot(ax, ay) || 1;
       const aimx = ax / am, aimy = ay / am;
-      // 估计目标球出去的落点,避免意外进袋或冲到危险点
       const power = 0.3;
       const vin = 6 + power * 22;
-      const travel = simTravelDist(vin) * 0.85; // 直球传递 ~90%
+      const travel = simTravelDist(vin) * 0.85;
       const ex = t.x + aimx * travel, ey = t.y + aimy * travel;
       if (endpointNearPocket(ex, ey)) continue;
-      // 避免目标球冲出球台(不科学,但当作不理想)
-      if (ex < L + BALL_R || ex > R - BALL_R || ey < T + BALL_R || ey > B - BALL_R) {
-        // 会撞库反弹,仍可接受;继续保留较低优先级
-      }
       cands.push({ t, aim: { x: aimx, y: aimy }, power, dist: am });
     }
     if (cands.length === 0) return null;
@@ -290,9 +360,7 @@ export class AIController {
   /* ============ 开球特例 ============ */
   planBreak(): Plan {
     const cue = this.eng.cue()!;
-    // 瞄向三角球堆顶球(apex)附近,带少许角度扩散以增加散度
-    let apex: Ball | null = null;
-    let best = 1e9;
+    let apex: Ball | null = null, best = 1e9;
     for (const b of this.eng.balls) {
       if (b.id === 0 || !b.active || b.sink || b.dead) continue;
       const d = Math.hypot(b.x - FOOT_X, b.y - MID_Y);
@@ -308,26 +376,30 @@ export class AIController {
   /* ============ 自由球摆放决策 ============ */
   planPlacement(): Vec | null {
     const eng = this.eng;
-    const p = eng.players[eng.turn];
     const legal = this.legalTargets();
     if (legal.length === 0) return null;
 
     const cands: { pos: Vec; score: number }[] = [];
     for (const t of legal) {
+      const others = this.othersAfter(t, legal);
       for (const pocket of POCKETS) {
         const dpx = pocket.x - t.x, dpy = pocket.y - t.y;
         const dpm = Math.hypot(dpx, dpy) || 1;
         const Dx = dpx / dpm, Dy = dpy / dpm;
-        // 摆放在 target 非袋侧后方 2R+pad 处,使入射方向直对袋口
         for (const pad of [12, 26, 46]) {
           const cx = t.x - Dx * (2 * BALL_R + pad);
           const cy = t.y - Dy * (2 * BALL_R + pad);
           if (!eng.validPlace(cx, cy)) continue;
-          const ev = this.evaluateShot(t, pocket, cx, cy);
+          const ev = this.evaluateShot(t, pocket, cx, cy, others);
           if (!ev || ev.blocked || ev.cutRad > this.diff.cutMaxRad) continue;
           if (this.diff.washRiskAvoid && ev.washRisk) continue;
-          cands.push({ pos: { x: cx, y: cy }, score: ev.score });
-          break; // 同一(target,pocket)只用第一个可行的 pad
+          // 大师级摆放也计入前瞻:优先摆到能连杆的位置
+          let s = ev.score;
+          if (this.diff.lookahead && others.length > 0 && this.nextPotFrom(ev.whiteEnd, others)) {
+            s -= this.diff.lookBonus;
+          }
+          cands.push({ pos: { x: cx, y: cy }, score: s });
+          break;
         }
       }
     }
@@ -341,7 +413,6 @@ export class AIController {
   /* ============ 执行 ============ */
   private actPlace() {
     const eng = this.eng;
-    // 重入/状态守卫:若条件不再满足(被模态打开、重新开局等打断)则放弃,交由 poke 重试
     if (!this.enabled || this.isModalOpen() || eng.state !== 'place' || eng.turn !== this.index) {
       this.scheduledUiKey = -1;
       return;
@@ -349,7 +420,6 @@ export class AIController {
     this.scheduledUiKey = -1;
     let pos: Vec | null = null;
     if (!eng.breakShotFlag) pos = this.planPlacement();
-    // 默认保持引擎自带的厨房区 placePos;自由球时优选拍摄点
     if (pos) eng.setPlaceVector(pos);
     this.timers.push(setTimeout(() => {
       if (!this.enabled || this.isModalOpen() || eng.state !== 'place' || eng.turn !== this.index) return;
@@ -367,10 +437,7 @@ export class AIController {
     let plan: Plan | null;
     if (eng.breakShotFlag) plan = this.planBreak();
     else plan = this.planShot();
-    if (!plan) {
-      // 极端兜底:随便一杆
-      plan = { kind: 'safety', aim: eng.aimDir, power: 0.4 };
-    }
+    if (!plan) plan = { kind: 'safety', aim: eng.aimDir, power: 0.4 };
     eng.setAimVector(plan.aim);
     eng.aiChargeFire(plan.power, this.diff.chargeViewMs);
   }

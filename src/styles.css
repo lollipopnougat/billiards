@@ -224,4 +224,6 @@ canvas#table.placing{cursor:pointer}
 .btn.ai.medium:hover{border-color:var(--brass);box-shadow:0 5px 0 #17100a,0 0 18px rgba(226,178,92,.3)}
 .btn.ai.hard{border-color:#a04030;color:#ffb0a2}
 .btn.ai.hard:hover{border-color:#e2705a;box-shadow:0 5px 0 #17100a,0 0 18px rgba(226,112,90,.3)}
+.btn.ai.master{border-color:#7a3aa0;color:#e6b8ff}
+.btn.ai.master:hover{border-color:#b25cf0;box-shadow:0 5px 0 #17100a,0 0 18px rgba(178,92,240,.35)}
 .start-hint{font-size:11px;color:#8a7350;margin-top:14px;letter-spacing:1px;line-height:1.6}

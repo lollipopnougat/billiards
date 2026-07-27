@@ -112,7 +112,7 @@ export default function App() {
   }, []);
 
   // 开始界面按钮:选择模式后,首次开局直接进入(游戏已运行);重选时重开一局
-  const applyModeAndStart = (aiMode: boolean, difficulty?: 'easy' | 'medium' | 'hard') => {
+  const applyModeAndStart = (aiMode: boolean, difficulty?: 'easy' | 'medium' | 'hard' | 'master') => {
     const ai = aiRef.current;
     const eng = engineRef.current;
     ai?.cancelPending();
@@ -131,7 +131,7 @@ export default function App() {
     setStartOpen(false);
   };
   const startPvP = () => applyModeAndStart(false);
-  const startPvAI = (d: 'easy' | 'medium' | 'hard') => applyModeAndStart(true, d);
+  const startPvAI = (d: 'easy' | 'medium' | 'hard' | 'master') => applyModeAndStart(true, d);
 
   // 按钮回调
   const handleRules = () => { aiRef.current?.cancelPending(); setRulesOpen(true); };
