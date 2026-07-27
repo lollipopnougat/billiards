@@ -1,20 +1,21 @@
 interface Props {
   guideOn: boolean;
   soundOn: boolean;
+  aiLabel: string | null;
   onRules: () => void;
   onToggleGuide: () => void;
   onToggleSound: () => void;
   onRestart: () => void;
 }
 
-export default function Header({ guideOn, soundOn, onRules, onToggleGuide, onToggleSound, onRestart }: Props) {
+export default function Header({ guideOn, soundOn, aiLabel, onRules, onToggleGuide, onToggleSound, onRestart }: Props) {
   return (
     <header className="marquee">
       <div className="sign">
         <div className="badge8"><i>8</i></div>
         <div>
           <h1>金杆台球馆</h1>
-          <p>GOLDEN CUE BILLIARDS · 中式八球 · 双人对战</p>
+          <p>GOLDEN CUE BILLIARDS · 中式八球 · {aiLabel ? `单人 vs AI · ${aiLabel}` : '双人对战'}</p>
         </div>
       </div>
       <div className="header-actions">

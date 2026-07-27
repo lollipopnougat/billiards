@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { BilliardsEngine } from './game/engine';
+import { AIController, DIFFICULTIES } from './game/ai';
 import type { UiSnapshot, WinInfo } from './game/types';
 import DustLayer from './components/DustLayer';
 import Header from './components/Header';
 import PlayerCard from './components/PlayerCard';
 import TableZone from './components/TableZone';
 import Modals from './components/Modals';
+import StartScreen from './components/StartScreen';
 
 const INITIAL_UI: UiSnapshot = {
   turn: 0,
@@ -28,8 +30,11 @@ export default function App() {
   const powerValRef = useRef<HTMLElement>(null);
 
   const engineRef = useRef<BilliardsEngine | null>(null);
+  const aiRef = useRef<AIController | null>(null);
+
   const rulesOpenRef = useRef(false);
   const winOpenRef = useRef(false);
+  const startOpenRef = useRef(true);
 
   const [ui, setUi] = useState<UiSnapshot>(INITIAL_UI);
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -37,11 +42,20 @@ export default function App() {
   const [winInfo, setWinInfo] = useState<WinInfo | null>(null);
   const [guideOn, setGuideOn] = useState(true);
   const [soundOn, setSoundOn] = useState(true);
+  const [startOpen, setStartOpen] = useState(true);
+  const [aiLabel, setAiLabel] = useState<string | null>(null);
+  const firstPickDoneRef = useRef(false);
 
   useEffect(() => { rulesOpenRef.current = rulesOpen; }, [rulesOpen]);
   useEffect(() => { winOpenRef.current = winOpen; }, [winOpen]);
+  useEffect(() => { startOpenRef.current = startOpen; }, [startOpen]);
 
-  // 胜利彩纸(直接操作 DOM,与原版一致)
+  // 任意模态关闭后,重新评估 AI 是否该动作(之前因模态遮挡而跳过的快照可被重试)
+  useEffect(() => {
+    if (!startOpen && !rulesOpen && !winOpen) aiRef.current?.poke();
+  }, [startOpen, rulesOpen, winOpen]);
+
+  // 彩纸(与原版一致,直接操作 DOM)
   const launchConfetti = () => {
     for (let i = 0; i < 70; i++) {
       const d = document.createElement('div');
@@ -56,39 +70,75 @@ export default function App() {
     }
   };
 
+  const isModalOpen = () => startOpenRef.current || rulesOpenRef.current || winOpenRef.current;
+
   useEffect(() => {
     if (!canvasRef.current || !powerFillRef.current || !powerValRef.current) return;
     const engine = new BilliardsEngine({
       canvas: canvasRef.current,
       powerFill: powerFillRef.current,
       powerVal: powerValRef.current,
-      isModalOpen: () => rulesOpenRef.current || winOpenRef.current,
+      isModalOpen,
       cb: {
-        onUi: setUi,
-        onGameOver: (info) => { setWinInfo(info); setWinOpen(true); },
+        onUi: (snap) => {
+          setUi(snap);
+          aiRef.current?.maybeAct(snap);
+        },
+        onGameOver: (info) => { aiRef.current?.cancelPending(); setWinInfo(info); setWinOpen(true); },
         onConfetti: launchConfetti,
       },
     });
     engineRef.current = engine;
+    aiRef.current = new AIController(engine, 1, isModalOpen);
     engine.start();
-    return () => { engine.destroy(); engineRef.current = null; };
+    return () => {
+      aiRef.current?.destroy();
+      engine.destroy();
+      aiRef.current = null;
+      engineRef.current = null;
+    };
   }, []);
 
-  // Esc 关闭所有弹窗
+  // Esc 关闭弹窗
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { setRulesOpen(false); setWinOpen(false); }
+      if (e.key === 'Escape') {
+        setRulesOpen(false);
+        if (winOpenRef.current) return; // 胜负弹窗由按钮关闭
+      }
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, []);
 
+  // 开始界面按钮:选择模式后,首次开局直接进入(游戏已运行);重选时重开一局
+  const applyModeAndStart = (aiMode: boolean, difficulty?: 'easy' | 'medium' | 'hard' | 'master') => {
+    const ai = aiRef.current;
+    const eng = engineRef.current;
+    ai?.cancelPending();
+    if (aiMode && difficulty) {
+      ai?.setEnabled(true);
+      ai?.setDifficulty(DIFFICULTIES[difficulty]);
+      if (eng) eng.players[1].name = '电脑·玩家二';
+      setAiLabel(DIFFICULTIES[difficulty].label);
+    } else {
+      ai?.setEnabled(false);
+      if (eng) eng.players[1].name = '玩家二';
+      setAiLabel(null);
+    }
+    if (firstPickDoneRef.current) eng?.restart();  // 重选模式则重新摸球开始
+    firstPickDoneRef.current = true;
+    setStartOpen(false);
+  };
+  const startPvP = () => applyModeAndStart(false);
+  const startPvAI = (d: 'easy' | 'medium' | 'hard' | 'master') => applyModeAndStart(true, d);
+
   // 按钮回调
-  const handleRules = () => setRulesOpen(true);
+  const handleRules = () => { aiRef.current?.cancelPending(); setRulesOpen(true); };
   const handleCloseRules = () => setRulesOpen(false);
-  const handleAgain = () => { setWinOpen(false); engineRef.current?.restart(); };
+  const handleAgain = () => { setWinOpen(false); aiRef.current?.cancelPending(); setStartOpen(true); };
   const handleCloseWin = () => setWinOpen(false);
-  const handleRestart = () => engineRef.current?.restart();
+  const handleRestart = () => { aiRef.current?.cancelPending(); setStartOpen(true); };
   const handleToggleGuide = () => {
     setGuideOn((v) => { const nv = !v; engineRef.current?.setGuide(nv); return nv; });
   };
@@ -103,6 +153,7 @@ export default function App() {
         <Header
           guideOn={guideOn}
           soundOn={soundOn}
+          aiLabel={aiLabel}
           onRules={handleRules}
           onToggleGuide={handleToggleGuide}
           onToggleSound={handleToggleSound}
@@ -123,6 +174,14 @@ export default function App() {
         onAgain={handleAgain}
         onCloseWin={handleCloseWin}
       />
+      {startOpen && (
+        <StartScreen
+          isRestart={firstPickDoneRef.current}
+          currentMode={aiLabel}
+          onStartPvP={startPvP}
+          onStartPvAI={startPvAI}
+        />
+      )}
     </>
   );
 }

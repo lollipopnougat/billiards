@@ -43,6 +43,7 @@ export class BilliardsEngine {
   strikeT = 0;
   strikeFrom = 0;
   resolveTimer: ReturnType<typeof setTimeout> | null = null;
+  aiChargeTimer: ReturnType<typeof setTimeout> | null = null;
   placePos = { x: HEAD_X - 80, y: MID_Y };
   players: [PlayerView, PlayerView] = [
     { name: '玩家一', group: null },
@@ -368,6 +369,7 @@ export class BilliardsEngine {
   }
   newGame(starter: number) {
     if (this.resolveTimer) clearTimeout(this.resolveTimer);
+    if (this.aiChargeTimer) { clearTimeout(this.aiChargeTimer); this.aiChargeTimer = null; }
     this.players.forEach(p => { p.group = null; });
     this.rack(); this.parts.length = 0; this.shot = null; this.power = 0;
     this.turn = starter; this.lastStarter = starter; this.breakShotFlag = true;
@@ -434,9 +436,15 @@ export class BilliardsEngine {
     }
   };
   onPointerUp = () => {
-    if (this.state === 'charge') { if (this.power > 0.05) this.startStrike(); else { this.state = 'aim'; this.power = 0; } }
+    // 仅人类蓄力(state==='charge' 且 downPos 已由 pointerdown 置位)响应 pointerup;
+    // AI 蓄力(downPos==null)由 aiChargeFire 内部定时器接管,这里要避免抢断。
+    if (this.state === 'charge' && this.downPos) {
+      if (this.power > 0.05) this.startStrike(); else { this.state = 'aim'; this.power = 0; }
+    }
   };
-  onLostCapture = () => { if (this.state === 'charge') { this.state = 'aim'; this.power = 0; } };
+  onLostCapture = () => {
+    if (this.state === 'charge' && this.downPos) { this.state = 'aim'; this.power = 0; }
+  };
 
   attach() {
     this.canvas.addEventListener('pointermove', this.onPointerMove);
@@ -646,6 +654,44 @@ export class BilliardsEngine {
   setSound(on: boolean) { audioFX.enabled = on; }
   restart() { this.newGame(1 - this.lastStarter); }
 
+  /* ================= AI 接口 ================= */
+  /** 检测线段 (x1,y1)->(x2,y2) 是否被其它活球遮挡;excludeIds 中的球忽略 */
+  segmentBlocked(x1: number, y1: number, x2: number, y2: number, excludeIds: Set<number>): boolean {
+    const ddx = x2 - x1, ddy = y2 - y1;
+    const segLen2 = ddx * ddx + ddy * ddy;
+    if (segLen2 < 1e-6) return false;
+    for (const b of this.balls) {
+      if (!b.active || b.sink || b.dead) continue;
+      if (excludeIds.has(b.id)) continue;
+      const px = b.x - x1, py = b.y - y1;
+      const t = (px * ddx + py * ddy) / segLen2;
+      if (t < 0 || t > 1) continue;
+      const cx = x1 + t * ddx, cy = y1 + t * ddy;
+      const dist2 = (b.x - cx) * (b.x - cx) + (b.y - cy) * (b.y - cy);
+      const limit = (BALL_R * 2);
+      if (dist2 < limit * limit) return true;
+    }
+    return false;
+  }
+  /** 直接设定瞄准方向(不依赖鼠标),供 AI 使用 */
+  setAimVector(dir: { x: number; y: number }) {
+    const m = Math.hypot(dir.x, dir.y) || 1;
+    this.aimDir = { x: dir.x / m, y: dir.y / m };
+  }
+  /** 设定白球摆放位置(供 AI 在 place 状态调用),随后由 AI 调用 placeCuePublic() */
+  setPlaceVector(pos: { x: number; y: number }) { this.placePos = { x: pos.x, y: pos.y }; }
+  /** AI 调用摆放确认 */
+  placeCuePublic() { this.placeCue(); }
+  /** AI 调用:走同一条 charge→strike→shoot 动画链 */
+  aiChargeFire(power: number, chargeViewMs: number) {
+    if (this.state !== 'aim') return;
+    this.power = clamp(power, 0, 1);
+    this.state = 'charge';
+    this.lastPow = -1; // 强制刷新力度条
+    if (this.aiChargeTimer) clearTimeout(this.aiChargeTimer);
+    this.aiChargeTimer = setTimeout(() => this.startStrike(), chargeViewMs);
+  }
+
   /* ================= 主循环 ================= */
   loop = (now: number) => {
     const dt = Math.min(40, now - this.last); this.last = now;
@@ -670,6 +716,7 @@ export class BilliardsEngine {
   destroy() {
     cancelAnimationFrame(this.raf);
     if (this.resolveTimer) clearTimeout(this.resolveTimer);
+    if (this.aiChargeTimer) clearTimeout(this.aiChargeTimer);
     this.detach();
   }
 }
