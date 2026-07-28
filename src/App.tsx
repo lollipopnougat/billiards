@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { BilliardsEngine } from './game/engine';
 import { AIController, DIFFICULTIES } from './game/ai';
 import type { UiSnapshot, WinInfo } from './game/types';
-import DustLayer from './components/DustLayer';
-import Header from './components/Header';
-import PlayerCard from './components/PlayerCard';
-import TableZone from './components/TableZone';
-import Modals from './components/Modals';
-import StartScreen from './components/StartScreen';
+import DustLayer from './components/DustLayer/DustLayer';
+import Header from './components/Header/Header';
+import PlayerCard from './components/PlayerCard/PlayerCard';
+import TableZone from './components/TableZone/TableZone';
+import Modals from './components/Modals/Modals';
+import StartScreen from './components/StartScreen/StartScreen';
 
 const INITIAL_UI: UiSnapshot = {
   turn: 0,

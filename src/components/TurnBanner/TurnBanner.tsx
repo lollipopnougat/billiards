@@ -1,5 +1,5 @@
-import { ACCENTS, GROUP_NAME } from '../game/constants';
-import type { UiSnapshot } from '../game/types';
+import { ACCENTS, GROUP_NAME } from '../../game/constants';
+import type { UiSnapshot } from '../../game/types';
 import './TurnBanner.css';
 
 export default function TurnBanner({ ui }: { ui: UiSnapshot }) {

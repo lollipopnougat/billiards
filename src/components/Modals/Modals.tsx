@@ -1,4 +1,4 @@
-import type { WinInfo } from '../game/types';
+import type { WinInfo } from '../../game/types';
 import './Modals.css';
 
 interface Props {
