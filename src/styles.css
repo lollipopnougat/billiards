@@ -7,6 +7,7 @@
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{min-height:100%}
+html{overflow-x:hidden}
 body{
   font-family:var(--font-body); color:var(--cream); background:var(--room); overflow-x:hidden;
   background-image:
@@ -275,7 +276,7 @@ canvas#table{ -webkit-tap-highlight-color:transparent; }
   .hint-line{ font-size:11px; letter-spacing:.5px; line-height:1.5; margin-top:9px }
   .lamp{ top:-40px }
   .lamp .shade{ width:130px; height:36px }
-  .lamp .glow{ width:520px; height:280px }
+  .lamp .glow{ width:100vw; max-width:560px; height:280px }
 }
 /* 极窄手机:开球选择按钮换行,弹窗自适应 */
 @media(max-width:380px){
