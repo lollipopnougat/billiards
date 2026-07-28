@@ -1,3 +1,5 @@
+import './StartScreen.css';
+
 interface Props {
   isRestart: boolean;
   currentMode: string | null;

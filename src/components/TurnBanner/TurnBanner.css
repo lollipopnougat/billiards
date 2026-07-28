@@ -1,0 +1,96 @@
+.turn-banner {
+  position: relative;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 4px 36px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid #3d2d18;
+}
+.tb-score {
+  font-family: var(--font-num);
+  font-size: 17px;
+  letter-spacing: 2px;
+  color: #cdb17f;
+}
+.tb-score b {
+  font-size: 22px;
+  color: #f5e3b4;
+  margin: 0 3px;
+}
+.tb-score i {
+  font-style: normal;
+  color: #8a6432;
+}
+.tb-mid {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: #f5e3b4;
+}
+.tb-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--p1);
+  box-shadow: 0 0 10px var(--p1);
+  transition:
+    background 0.3s,
+    box-shadow 0.3s;
+  animation: blink 1.3s infinite;
+}
+.tb-side {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: #8a6432;
+}
+#turnText.swap {
+  animation: swapIn 0.4s ease;
+}
+@keyframes swapIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---- 响应式 ---- */
+@media (max-width: 900px) {
+  .turn-banner {
+    margin-bottom: 22px;
+    padding: 7px 12px;
+  }
+  .tb-mid {
+    font-size: 18px;
+  }
+}
+@media (max-width: 640px) {
+  .turn-banner {
+    margin-bottom: 18px;
+    padding: 6px 10px;
+    flex-wrap: wrap;
+  }
+  .tb-score {
+    font-size: 15px;
+  }
+  .tb-score b {
+    font-size: 18px;
+  }
+  .tb-mid {
+    font-size: 16px;
+  }
+  .tb-side {
+    display: none;
+  }
+}

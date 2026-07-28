@@ -1,5 +1,6 @@
-import { BALL_COLORS, GROUP_IDS, GROUP_NAME } from '../game/constants';
-import type { UiSnapshot } from '../game/types';
+import { BALL_COLORS, GROUP_IDS, GROUP_NAME } from '../../game/constants';
+import './PlayerCard.css';
+import type { UiSnapshot } from '../../game/types';
 
 interface Props {
   index: number;

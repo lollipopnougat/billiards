@@ -1,0 +1,26 @@
+#dustLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+#dustLayer span {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.22;
+  filter: blur(0.5px);
+  background: radial-gradient(
+    circle,
+    rgba(255, 226, 170, 0.95),
+    rgba(255, 226, 170, 0) 70%
+  );
+  animation: drift ease-in-out infinite alternate;
+}
+@keyframes drift {
+  from {
+    transform: translate(0, 0);
+  }
+  to {
+    transform: translate(46px, -64px);
+  }
+}

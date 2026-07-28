@@ -181,7 +181,9 @@ export class BilliardsEngine {
       pg.addColorStop(0, '#000'); pg.addColorStop(0.8, '#0a0603'); pg.addColorStop(1, '#1c0f06');
       c.fillStyle = pg; c.beginPath(); c.arc(p.x, p.y, p.r + 2, 0, 7); c.fill();
       c.strokeStyle = 'rgba(202,161,92,.5)'; c.lineWidth = 2.4;
-      c.beginPath(); c.arc(p.x, p.y, p.r + 4, Math.PI * 0.75, Math.PI * 2.25); c.stroke();
+      // 铜环缺口朝向该袋口所在的桌边内侧(指向台心),不是统一朝下
+      const theta = Math.atan2(MID_Y - p.y, cx - p.x);
+      c.beginPath(); c.arc(p.x, p.y, p.r + 4, theta + Math.PI / 4, theta + Math.PI / 4 + Math.PI * 1.5); c.stroke();
     }
     // 木框铜菱形准星
     c.fillStyle = '#e8c87e';
@@ -415,35 +417,74 @@ export class BilliardsEngine {
     this.power = 0; this.updateUI();
   }
 
+  touchActive = false;   // 当前是否处于一次触屏拖拽中
+  private clampPlace(x: number, y: number) {
+    return {
+      x: clamp(x, L + BALL_R, this.kitchenOnly ? HEAD_X - BALL_R : R - BALL_R),
+      y: clamp(y, T + BALL_R, B - BALL_R),
+    };
+  }
   onPointerMove = (e: PointerEvent) => {
     this.mouse = this.toCanvas(e);
-    if (this.state === 'aim') this.setAim();
-    else if (this.state === 'charge' && this.downPos) this.power = clamp((Math.hypot(this.mouse.x - this.downPos.x, this.mouse.y - this.downPos.y) - 8) / 150, 0, 1);
-    else if (this.state === 'place') this.placePos = {
-      x: clamp(this.mouse.x, L + BALL_R, this.kitchenOnly ? HEAD_X - BALL_R : R - BALL_R),
-      y: clamp(this.mouse.y, T + BALL_R, B - BALL_R),
-    };
+    const isTouch = e.pointerType === 'touch';
+    if (this.state === 'aim') {
+      // 桌面:鼠标悬停瞄准;触屏无悬停,aim 态不靠移动改动瞄準
+      if (!isTouch) this.setAim();
+    } else if (this.state === 'charge' && this.downPos) {
+      const dd = Math.hypot(this.mouse.x - this.downPos.x, this.mouse.y - this.downPos.y);
+      if (isTouch) {
+        // 触屏:拖拽同时驶向击球方向(白球=>手指)定瞄準,拖远则力度增大;
+        // 小幅度拖拽不改瞄準,避免点一下就偏方向
+        if (dd > 10) this.setAim();
+        this.power = clamp((dd - 8) / 150, 0, 1);
+      } else {
+        this.power = clamp((dd - 8) / 150, 0, 1);
+      }
+    } else if (this.state === 'place') {
+      // 桌面:鼠标移动即可移动幽灵球;触屏:拖动时跟随手指(松手才确认)
+      if (!isTouch || this.touchActive) this.placePos = this.clampPlace(this.mouse.x, this.mouse.y);
+    }
   };
   onPointerDown = (e: PointerEvent) => {
     audioFX.init();
     if (this.isModalOpen()) return;
+    const isTouch = e.pointerType === 'touch';
     this.canvas.setPointerCapture(e.pointerId);
     this.mouse = this.toCanvas(e);
-    if (this.state === 'aim' && this.cue().active) { this.setAim(); this.downPos = this.mouse; this.power = 0; this.state = 'charge'; }
-    else if (this.state === 'place') {
-      if (this.validPlace(this.placePos.x, this.placePos.y)) this.placeCue();
-      else { audioFX.foul(); this.setStatus('此处不能放置白球,请换个位置', 'foul'); }
+    if (isTouch) this.touchActive = true;
+    if (this.state === 'aim' && this.cue().active) {
+      this.downPos = this.mouse; this.power = 0; this.state = 'charge';
+      // 桌面:按下时再确认一次瞄準(原行为);触屏:不立即改方向,留待拖拽
+      if (!isTouch) this.setAim();
+    } else if (this.state === 'place') {
+      if (isTouch) {
+        // 触屏:触摸点作为幽灵球起点,随后可拖动微调,松手确认
+        this.placePos = this.clampPlace(this.mouse.x, this.mouse.y);
+      } else if (this.validPlace(this.placePos.x, this.placePos.y)) {
+        this.placeCue();
+      } else {
+        audioFX.foul(); this.setStatus('此处不能放置白球,请换个位置', 'foul');
+      }
     }
   };
-  onPointerUp = () => {
+  onPointerUp = (e: PointerEvent) => {
+    const isTouch = e.pointerType === 'touch';
+    if (isTouch) this.touchActive = false;
     // 仅人类蓄力(state==='charge' 且 downPos 已由 pointerdown 置位)响应 pointerup;
     // AI 蓄力(downPos==null)由 aiChargeFire 内部定时器接管,这里要避免抢断。
     if (this.state === 'charge' && this.downPos) {
       if (this.power > 0.05) this.startStrike(); else { this.state = 'aim'; this.power = 0; }
+    } else if (isTouch && this.state === 'place') {
+      // 触屏摆放:松手时确认;非法则提示,可继续拖动重试
+      if (this.validPlace(this.placePos.x, this.placePos.y)) this.placeCue();
+      else { audioFX.foul(); this.setStatus('此处不能放置白球,请换个位置', 'foul'); }
     }
   };
-  onLostCapture = () => {
+  onLostCapture = (e: PointerEvent) => {
+    const isTouch = e.pointerType === 'touch';
+    this.touchActive = false;
     if (this.state === 'charge' && this.downPos) { this.state = 'aim'; this.power = 0; }
+    void isTouch;
   };
 
   attach() {
