@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { RefObject } from 'react';
 import type { UiSnapshot } from '../game/types';
+import './TableZone.css';
 import TurnBanner from './TurnBanner';
 
 interface Props {

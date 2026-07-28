@@ -1,0 +1,148 @@
+/* 弹窗 */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(10, 6, 3, 0.72);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.28s;
+}
+.modal-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+.modal {
+  width: min(540px, 92vw);
+  border-radius: 16px;
+  padding: 28px 30px;
+  position: relative;
+  transform: translateY(16px) scale(0.96);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.modal-backdrop.open .modal {
+  transform: none;
+}
+.rules-modal {
+  background: linear-gradient(170deg, #f6ead0, #e9d6ac);
+  color: #3a2a15;
+  border: 6px solid #5a3b22;
+  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
+}
+.rules-modal h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: 3px;
+  color: #5a3b22;
+  margin-bottom: 14px;
+}
+.rules-modal ul {
+  list-style: none;
+}
+.rules-modal li {
+  font-size: 14px;
+  line-height: 1.75;
+  padding: 7px 0 7px 20px;
+  position: relative;
+  border-bottom: 1px dashed #c9ab72;
+}
+.rules-modal li:last-child {
+  border: none;
+}
+.rules-modal li::before {
+  content: '◆';
+  position: absolute;
+  left: 0;
+  top: 7px;
+  color: #b98526;
+  font-size: 11px;
+}
+.rules-modal b {
+  color: #8a5a1c;
+}
+.rules-modal .btn {
+  margin-top: 16px;
+  width: 100%;
+}
+.win-modal {
+  background: linear-gradient(170deg, #2c2115, #170f07);
+  border: 2px solid #a87f3a;
+  text-align: center;
+  box-shadow:
+    0 0 60px rgba(240, 178, 62, 0.25),
+    0 30px 70px rgba(0, 0, 0, 0.8);
+}
+.win-8 {
+  width: 92px;
+  height: 92px;
+  margin: 4px auto 16px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 32% 26%, #7a7a84, #17171b 56%, #000);
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.7),
+    0 0 34px rgba(240, 178, 62, 0.35);
+  animation: float8 2.6s ease-in-out infinite;
+}
+.win-8 span {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff, #e8e0cc);
+  display: grid;
+  place-items: center;
+  font: 400 26px/1 var(--font-num);
+  color: #141414;
+}
+.win-modal h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 32px;
+  letter-spacing: 4px;
+  color: #f6d489;
+  text-shadow: 0 0 22px rgba(240, 178, 62, 0.5);
+}
+.win-modal p {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #cdb17f;
+  letter-spacing: 1px;
+}
+.win-score {
+  margin: 14px 0 18px;
+  font-family: var(--font-num);
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: #f0e2c0;
+}
+.confetti {
+  position: fixed;
+  top: -24px;
+  width: 9px;
+  height: 15px;
+  z-index: 200;
+  pointer-events: none;
+  border-radius: 2px;
+  animation: fall linear forwards;
+}
+@keyframes fall {
+  to {
+    transform: translateY(112vh) rotate(720deg);
+    opacity: 0.4;
+  }
+}
+
+/* ---- 响应式:小屏弹窗可滚动 ---- */
+.modal {
+  max-height: 88vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.rules-modal ul {
+  padding-right: 2px;
+}

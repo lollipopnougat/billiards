@@ -1,0 +1,127 @@
+/* ===== 开始界面 ===== */
+.start-modal {
+  width: min(460px, 92vw);
+  background: linear-gradient(170deg, #2c2115, #170f07);
+  border: 2px solid #a87f3a;
+  text-align: center;
+  box-shadow:
+    0 0 60px rgba(240, 178, 62, 0.25),
+    0 30px 70px rgba(0, 0, 0, 0.8);
+  color: var(--cream);
+}
+.start-badge {
+  width: 72px;
+  height: 72px;
+  margin: 2px auto 12px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 32% 26%, #7a7a84, #17171b 56%, #000);
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.7),
+    0 0 28px rgba(240, 178, 62, 0.3);
+  animation: float8 2.6s ease-in-out infinite;
+}
+.start-badge span {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #fff, #e8e0cc);
+  display: grid;
+  place-items: center;
+  font: 400 22px/1 var(--font-num);
+  color: #141414;
+}
+.start-modal h2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 28px;
+  letter-spacing: 3px;
+  color: #f6d489;
+  text-shadow: 0 0 22px rgba(240, 178, 62, 0.5);
+  margin-bottom: 6px;
+}
+.start-sub {
+  font-size: 13px;
+  color: #cdb27f;
+  letter-spacing: 2px;
+  margin-bottom: 18px;
+}
+.start-sub2 {
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 3px;
+  color: #cdb17f;
+  margin: 6px 0 8px;
+}
+.start-actions {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0;
+}
+.start-actions.ai {
+  gap: 12px;
+}
+.btn.ai.easy {
+  border-color: #5a7d4a;
+  color: #c6e0b0;
+}
+.btn.ai.easy:hover {
+  border-color: #77e0a0;
+  box-shadow:
+    0 5px 0 #17100a,
+    0 0 18px rgba(119, 224, 160, 0.3);
+}
+.btn.ai.medium {
+  border-color: #a87f3a;
+  color: #f5e3b4;
+}
+.btn.ai.medium:hover {
+  border-color: var(--brass);
+  box-shadow:
+    0 5px 0 #17100a,
+    0 0 18px rgba(226, 178, 92, 0.3);
+}
+.btn.ai.hard {
+  border-color: #a04030;
+  color: #ffb0a2;
+}
+.btn.ai.hard:hover {
+  border-color: #e2705a;
+  box-shadow:
+    0 5px 0 #17100a,
+    0 0 18px rgba(226, 112, 90, 0.3);
+}
+.btn.ai.master {
+  border-color: #7a3aa0;
+  color: #e6b8ff;
+}
+.btn.ai.master:hover {
+  border-color: #b25cf0;
+  box-shadow:
+    0 5px 0 #17100a,
+    0 0 18px rgba(178, 92, 240, 0.35);
+}
+.start-hint {
+  font-size: 11px;
+  color: #8a7350;
+  margin-top: 14px;
+  letter-spacing: 1px;
+  line-height: 1.6;
+}
+
+/* ---- 响应式:极窄手机按钮换行 ---- */
+@media (max-width: 380px) {
+  .start-actions.ai {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .start-actions.ai .btn {
+    flex: 1 1 38%;
+    min-width: 96px;
+  }
+  .btn.ai.master,
+  .btn.ai.hard {
+    flex-basis: 40%;
+  }
+}

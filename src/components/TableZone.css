@@ -1,0 +1,205 @@
+/* 球台区 */
+.table-zone {
+  position: relative;
+}
+
+.table-wrap {
+  position: relative;
+  border-radius: 20px;
+  box-shadow:
+    0 30px 60px -18px rgba(0, 0, 0, 0.85),
+    0 0 0 1px #2c1e0e,
+    0 0 70px -20px rgba(240, 178, 62, 0.22);
+  animation: tableIn 0.8s cubic-bezier(0.22, 1, 0.36, 1) backwards 0.1s;
+}
+@keyframes tableIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+canvas#table {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 20px;
+  touch-action: none;
+  cursor: crosshair;
+  -webkit-tap-highlight-color: transparent;
+}
+canvas#table.placing {
+  cursor: pointer;
+}
+
+.console {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #241a10, #1a1208);
+  border: 1px solid #42301a;
+  flex-wrap: wrap;
+}
+.power-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.pw-label {
+  font-family: var(--font-display);
+  letter-spacing: 2px;
+  color: #cdb17f;
+  font-size: 15px;
+}
+.power-bar {
+  width: 210px;
+  height: 15px;
+  border-radius: 8px;
+  background: #120c06;
+  border: 1px solid #4a351e;
+  position: relative;
+  overflow: hidden;
+}
+.power-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 20px,
+    rgba(255, 255, 255, 0.06) 20px 21px
+  );
+}
+.power-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 7px;
+  transition: width 0.05s linear;
+  background: linear-gradient(90deg, #77e0a0, #f0b23e 55%, #e2543e);
+  box-shadow: 0 0 10px rgba(240, 178, 62, 0.5);
+}
+.power-fill.hot {
+  animation: hotPulse 0.4s infinite;
+}
+@keyframes hotPulse {
+  50% {
+    box-shadow: 0 0 18px rgba(226, 84, 62, 0.95);
+  }
+}
+.pw-val {
+  font-family: var(--font-num);
+  font-size: 18px;
+  width: 46px;
+  color: #f5e3b4;
+  letter-spacing: 1px;
+}
+.status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+  min-height: 22px;
+  flex: 1;
+  min-width: 220px;
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+  background: #cdb17f;
+  box-shadow: 0 0 8px #cdb17f;
+}
+.status.good .status-dot {
+  background: #77e0a0;
+  box-shadow: 0 0 8px #77e0a0;
+}
+.status.good #statusText {
+  color: #a9eec6;
+}
+.status.foul .status-dot {
+  background: #ff7a66;
+  box-shadow: 0 0 8px #ff7a66;
+}
+.status.foul #statusText {
+  color: #ffb0a2;
+}
+#statusText {
+  animation: stIn 0.35s ease;
+}
+@keyframes stIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hint-line {
+  text-align: center;
+  font-size: 12px;
+  color: #8a7350;
+  margin-top: 11px;
+  letter-spacing: 1px;
+}
+
+/* ---- 响应式 ---- */
+/* 窄屏:球台移到顶部全宽(此布局规则与 .arena 协同) */
+@media (max-width: 1120px) {
+  .table-zone {
+    grid-column: 1/-1;
+    order: -1;
+  }
+}
+@media (max-width: 900px) {
+  .console {
+    gap: 12px;
+    padding: 9px 12px;
+  }
+  .power-bar {
+    width: 170px;
+  }
+}
+@media (max-width: 640px) {
+  .console {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 9px;
+    padding: 9px 11px;
+  }
+  .power-wrap {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .power-bar {
+    flex: 1;
+    width: auto;
+    max-width: 100%;
+  }
+  .pw-val {
+    width: auto;
+    min-width: 44px;
+    text-align: right;
+  }
+  .status {
+    min-width: 0;
+    width: 100%;
+    font-size: 13px;
+  }
+  .hint-line {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    line-height: 1.5;
+    margin-top: 9px;
+  }
+}

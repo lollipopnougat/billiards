@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import './DustLayer.css';
 
 /** 顶部漂浮尘埃氛围,16 颗,一次性生成 */
 export default function DustLayer() {
