@@ -35,11 +35,6 @@ export default function TableZone({ ui, canvasRef, powerFillRef, powerValRef }: 
       <TurnBanner ui={ui} />
       <div className="table-wrap">
         <canvas id="table" ref={canvasRef} />
-        <div className="lamp">
-          <div className="cord"></div>
-          <div className="shade"><div className="bulb"></div></div>
-          <div className="glow"></div>
-        </div>
       </div>
       <div className="console">
         <div className="power-wrap">
