@@ -181,7 +181,9 @@ export class BilliardsEngine {
       pg.addColorStop(0, '#000'); pg.addColorStop(0.8, '#0a0603'); pg.addColorStop(1, '#1c0f06');
       c.fillStyle = pg; c.beginPath(); c.arc(p.x, p.y, p.r + 2, 0, 7); c.fill();
       c.strokeStyle = 'rgba(202,161,92,.5)'; c.lineWidth = 2.4;
-      c.beginPath(); c.arc(p.x, p.y, p.r + 4, Math.PI * 0.75, Math.PI * 2.25); c.stroke();
+      // 铜环缺口朝向该袋口所在的桌边内侧(指向台心),不是统一朝下
+      const theta = Math.atan2(MID_Y - p.y, cx - p.x);
+      c.beginPath(); c.arc(p.x, p.y, p.r + 4, theta + Math.PI / 4, theta + Math.PI / 4 + Math.PI * 1.5); c.stroke();
     }
     // 木框铜菱形准星
     c.fillStyle = '#e8c87e';
