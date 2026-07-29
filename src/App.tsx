@@ -8,6 +8,7 @@ import PlayerCard from './components/PlayerCard';
 import TableZone from './components/TableZone';
 import Modals from './components/Modals';
 import StartScreen from './components/StartScreen';
+import FullScreenButton from './components/FullScreenButton';
 
 const INITIAL_UI: UiSnapshot = {
   turn: 0,
@@ -35,6 +36,7 @@ export default function App() {
   const rulesOpenRef = useRef(false);
   const winOpenRef = useRef(false);
   const startOpenRef = useRef(true);
+  const aiOnRef = useRef(false);
 
   const [ui, setUi] = useState<UiSnapshot>(INITIAL_UI);
   const [rulesOpen, setRulesOpen] = useState(false);
@@ -44,6 +46,11 @@ export default function App() {
   const [soundOn, setSoundOn] = useState(true);
   const [startOpen, setStartOpen] = useState(true);
   const [aiLabel, setAiLabel] = useState<string | null>(null);
+  const [rotated, setRotated] = useState(false);
+  useEffect(() => {
+    if (rotated) document.body.classList.add('fs-rotate');
+    else document.body.classList.remove('fs-rotate');
+  }, [rotated]);
   const firstPickDoneRef = useRef(false);
 
   useEffect(() => { rulesOpenRef.current = rulesOpen; }, [rulesOpen]);
@@ -82,7 +89,12 @@ export default function App() {
       cb: {
         onUi: (snap) => {
           setUi(snap);
-          aiRef.current?.maybeAct(snap);
+          // AI 回合禁止人类交互:人类点击/拖拽会被引擎直接忽略
+          const ai = aiRef.current;
+          const aiTurn = !!ai && aiOnRef.current && snap.turn === ai.index;
+          const eng = engineRef.current;
+          if (eng) eng.setHumanDisabled(aiTurn);
+          ai?.maybeAct(snap);
         },
         onGameOver: (info) => { aiRef.current?.cancelPending(); setWinInfo(info); setWinOpen(true); },
         onConfetti: launchConfetti,
@@ -121,10 +133,13 @@ export default function App() {
       ai?.setDifficulty(DIFFICULTIES[difficulty]);
       if (eng) eng.players[1].name = '电脑·玩家二';
       setAiLabel(DIFFICULTIES[difficulty].label);
+      aiOnRef.current = true;
     } else {
       ai?.setEnabled(false);
       if (eng) eng.players[1].name = '玩家二';
       setAiLabel(null);
+      aiOnRef.current = false;
+      eng?.setHumanDisabled(false);
     }
     if (firstPickDoneRef.current) eng?.restart();  // 重选模式则重新摸球开始
     firstPickDoneRef.current = true;
@@ -166,6 +181,7 @@ export default function App() {
           <PlayerCard index={1} ui={ui} />
         </main>
       </div>
+      <FullScreenButton rotated={rotated} onToggleRotate={setRotated} />
       <Modals
         rulesOpen={rulesOpen}
         winOpen={winOpen}

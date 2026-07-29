@@ -172,3 +172,57 @@ body {
     padding: 10px 20px;
   }
 }
+
+/* ===== 手机横屏全屏(旋转 .room) ===== */
+/* 触屏设备进入横屏模式:.room 旋转 90°,用 100dvh 作宽、100vw 作高,
+   填满竖屏手机的整块视口,台球桌随 table-wrap 宽度自适应拉伸。 */
+body.fs-rotate {
+  /* 进入旋转模式时锁背景滚动,避免双指误触发整页滚动 */
+  overflow: hidden;
+  height: 100dvh;
+  /* 在无法真正全屏时给个暗色遮底,避免尾部留白 */
+  background: #0a0704;
+}
+body.fs-rotate .room {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100dvh;
+  height: 100vw;
+  /* 注意:origin 必须在左上角;先 translateY(-100vw) 再 rotate,顺序不可乱 */
+  transform-origin: 0 0;
+  transform: rotate(90deg) translateY(-100vw);
+  /* 旋转后内容可能超出,允许内部滚动(双指/惯性) */
+  overflow: auto;
+  /* 旋转后边距按视觉收紧 */
+  padding: 10px 16px 18px;
+  box-sizing: border-box;
+  /* 让水平滚动条/竖向尽量贴边 */
+  max-height: 100vw;
+}
+/* 旋转模式下台球桌尽量占满可用高度:room 高=视口宽,
+   table-wrap 也应在卡片/控制台之外尽量高宽 */
+body.fs-rotate .arena {
+  grid-template-columns: 200px minmax(0, 1fr) 200px;
+  gap: 12px;
+}
+/* 紧凑标题与按钮,最大化留出球台空间 */
+body.fs-rotate .marquee {
+  padding: 2px 2px 8px;
+}
+body.fs-rotate .sign h1 {
+  font-size: 22px;
+  letter-spacing: 2px;
+}
+body.fs-rotate .arena .player-card {
+  padding: 10px 10px 9px;
+}
+body.fs-rotate .turn-banner {
+  margin-bottom: 10px;
+  padding: 6px 10px;
+}
+body.fs-rotate .console {
+  margin-top: 8px;
+  padding: 8px 10px;
+}
+/* 非全屏环境(老 iOS)也尽量横铺:用 100vh/vw 兜底;真正全屏后 dvh/vw 一致 */

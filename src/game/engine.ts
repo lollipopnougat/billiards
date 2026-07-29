@@ -61,6 +61,9 @@ export class BilliardsEngine {
   statusKey = 0;
   uiKey = 0;
   raf = 0;
+  /** AI 出杆等阶段禁止人类交互;由 App 在 AI 回合切换 */
+  humanDisabled = false;
+  setHumanDisabled(v: boolean) { this.humanDisabled = v; }
 
   constructor(opts: {
     canvas: HTMLCanvasElement;
@@ -425,6 +428,7 @@ export class BilliardsEngine {
     };
   }
   onPointerMove = (e: PointerEvent) => {
+    if (this.humanDisabled) return;       // AI 回合:禁止人类拖拽干扰
     this.mouse = this.toCanvas(e);
     const isTouch = e.pointerType === 'touch';
     if (this.state === 'aim') {
@@ -446,6 +450,7 @@ export class BilliardsEngine {
     }
   };
   onPointerDown = (e: PointerEvent) => {
+    if (this.humanDisabled) return;       // AI 出杆/摆放等阶段:不响应人类点击
     audioFX.init();
     if (this.isModalOpen()) return;
     const isTouch = e.pointerType === 'touch';
@@ -468,6 +473,7 @@ export class BilliardsEngine {
     }
   };
   onPointerUp = (e: PointerEvent) => {
+    if (this.humanDisabled) return;
     const isTouch = e.pointerType === 'touch';
     if (isTouch) this.touchActive = false;
     // 仅人类蓄力(state==='charge' 且 downPos 已由 pointerdown 置位)响应 pointerup;
@@ -480,11 +486,9 @@ export class BilliardsEngine {
       else { audioFX.foul(); this.setStatus('此处不能放置白球,请换个位置', 'foul'); }
     }
   };
-  onLostCapture = (e: PointerEvent) => {
-    const isTouch = e.pointerType === 'touch';
+  onLostCapture = (_e: PointerEvent) => {
     this.touchActive = false;
     if (this.state === 'charge' && this.downPos) { this.state = 'aim'; this.power = 0; }
-    void isTouch;
   };
 
   attach() {
