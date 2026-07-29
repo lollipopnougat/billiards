@@ -4,13 +4,14 @@ interface Props {
   guideOn: boolean;
   soundOn: boolean;
   aiLabel: string | null;
+  children?: React.ReactNode;
   onRules: () => void;
   onToggleGuide: () => void;
   onToggleSound: () => void;
   onRestart: () => void;
 }
 
-export default function Header({ guideOn, soundOn, aiLabel, onRules, onToggleGuide, onToggleSound, onRestart }: Props) {
+export default function Header({ guideOn, soundOn, aiLabel, children, onRules, onToggleGuide, onToggleSound, onRestart }: Props) {
   return (
     <header className="marquee">
       <div className="sign">
@@ -29,6 +30,7 @@ export default function Header({ guideOn, soundOn, aiLabel, onRules, onToggleGui
           音效 · {soundOn ? '开' : '关'}
         </button>
         <button className="btn" onClick={onRestart}>重新开局</button>
+        {children}
       </div>
     </header>
   );

@@ -176,6 +176,7 @@ export default function App() {
           onToggleSound={handleToggleSound}
           onRestart={handleRestart}
         />
+        <FullScreenButton rotated={rotated} onToggleRotate={setRotated} />
         <div className="divider" />
         <main className="arena">
           <PlayerCard index={0} ui={ui} />
@@ -183,7 +184,6 @@ export default function App() {
           <PlayerCard index={1} ui={ui} />
         </main>
       </div>
-      <FullScreenButton rotated={rotated} onToggleRotate={setRotated} />
       <Modals
         rulesOpen={rulesOpen}
         winOpen={winOpen}

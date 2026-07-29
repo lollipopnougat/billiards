@@ -2,18 +2,14 @@ import { useEffect, useState } from 'react';
 import './FullScreenButton.css';
 
 interface Props {
-  /** 是否处于旋转横屏模式(父级 App 经管 body 类) */
   rotated: boolean;
   onToggleRotate: (v: boolean) => void;
 }
 
-/** 申请浏览器真正的全屏;部分老 iOS 不支持则静默失败,仍可用旋转横屏兜底 */
 function requestFullscreen(el: Element) {
-  const anyEl = el as Element & {
-    webkitRequestFullscreen?: () => Promise<void>;
-  };
   if (document.fullscreenElement) return;
-  const req = el.requestFullscreen || (el as any).webkitRequestFullscreen;
+  const anyEl = el as Element & { webkitRequestFullscreen?: () => Promise<void> };
+  const req = el.requestFullscreen || anyEl.webkitRequestFullscreen;
   if (req) { try { req.call(el); } catch { /* ignore */ } }
 }
 function exitFullscreen() {
@@ -23,27 +19,26 @@ function exitFullscreen() {
 }
 
 export default function FullScreenButton({ rotated, onToggleRotate }: Props) {
-  // 仅在触屏(粗指针)设备显示;桌面端隐藏,不影响原体验
-  const [touch, setTouch] = useState(false);
+  const [show, setShow] = useState(false);
   const isFs = useIsFullscreen();
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
-    const mq = window.matchMedia('(pointer: coarse)');
-    setTouch(mq.matches);
+    function check() {
+      if (typeof window === 'undefined') return;
+      const coarse = !!window.matchMedia?.('(pointer: coarse)').matches;
+      const vw = Math.min(window.innerWidth, window.screen?.width || Infinity);
+      setShow(coarse && vw <= 1024);
+    }
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
   }, []);
 
-  if (!touch) return null;
+  if (!show) return null;
 
-  const enter = () => {
-    requestFullscreen(document.documentElement);
-    onToggleRotate(true);
-  };
-  const exit = () => {
-    exitFullscreen();
-    onToggleRotate(false);
-  };
   const active = isFs || rotated;
+  const enter = () => { requestFullscreen(document.documentElement); onToggleRotate(true); };
+  const exit = () => { exitFullscreen(); onToggleRotate(false); };
 
   return (
     <button

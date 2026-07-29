@@ -1,12 +1,25 @@
 .fs-btn {
-  /* 默认桌面按钮基类已含样式;此处只在触屏显示,且固定到右下角方便点 */
+  /* 贴在页面右上角,与 header 按钮同高度 */
+  position: absolute;
+  top: 24px;
+  right: 28px;
+  z-index: 10;
 }
-/* 横屏全屏时把按钮压在右上角,始终可点退出 */
+@media (max-width: 900px) {
+  .fs-btn { top: 18px; right: 16px; padding: 7px 10px; font-size: 13px; }
+}
+@media (max-width: 640px) {
+  .fs-btn { top: 14px; right: 14px; padding: 6px 9px; font-size: 12px; letter-spacing: 1px; }
+}
+/* 横屏全屏时退出按钮固定到左下角,避免遮挡顶部回合横幅计分区域 */
 body.fs-rotate .fs-btn {
   position: fixed;
   z-index: 50;
-  top: 8px;
-  right: 8px;
-  padding: 7px 12px;
-  font-size: 13px;
+  bottom: 10px;
+  left: 10px;
+  top: auto;
+  right: auto;
+  padding: 5px 10px;
+  font-size: 12px;
+  letter-spacing: 1px;
 }
