@@ -384,8 +384,18 @@ export class BilliardsEngine {
   }
 
   /* ================= 交互 ================= */
+  /** 当前画面是否用 CSS rotate(90deg) 旋转为横屏;为 true 时反向映射指针坐标 */
+  screenRotated = false;
+  setScreenRotated(v: boolean) { this.screenRotated = v; }
   toCanvas(e: PointerEvent) {
     const r = this.canvas.getBoundingClientRect();
+    if (this.screenRotated) {
+      // room 经 rotate(90deg) 顺时针旋转:canvas 内 x->屏幕 y(向下),
+      // canvas 内 y->屏幕 x(反向,从右到左)。rect 仍是旋转后的精确矩形。
+      const u = (e.clientX - r.left) / r.width;     // 屏幕 x -> canvas y(反向)
+      const v = (e.clientY - r.top) / r.height;   // 屏幕 y -> canvas x
+      return { x: v * CW, y: (1 - u) * CH };
+    }
     return { x: (e.clientX - r.left) * CW / r.width, y: (e.clientY - r.top) * CH / r.height };
   }
   setAim() {

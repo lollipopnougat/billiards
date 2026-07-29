@@ -50,6 +50,8 @@ export default function App() {
   useEffect(() => {
     if (rotated) document.body.classList.add('fs-rotate');
     else document.body.classList.remove('fs-rotate');
+    // 同步给引擎:旋转状态下反向映射指针坐标,使拖拽/瞄准与旋转后的静面对得上
+    engineRef.current?.setScreenRotated(rotated);
   }, [rotated]);
   const firstPickDoneRef = useRef(false);
 
