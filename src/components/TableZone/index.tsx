@@ -37,14 +37,15 @@ export default function TableZone({ ui, canvasRef, powerFillRef, powerValRef }: 
       <div className="table-wrap">
         <canvas id="table" ref={canvasRef} />
       </div>
-      <div className="console">
-        <div className="power-wrap">
-          <span className="pw-label">力度</span>
-          <div className="power-bar">
-            <div className="power-fill" ref={powerFillRef} />
-          </div>
-          <span className="pw-val" ref={powerValRef as RefObject<HTMLSpanElement>}>0%</span>
+      {/* 力度条独立成块,横屏下贴到球台侧边纵向显示 */}
+      <div className="power-wrap">
+        <span className="pw-label">力度</span>
+        <div className="power-bar">
+          <div className="power-fill" ref={powerFillRef} />
         </div>
+        <span className="pw-val" ref={powerValRef as RefObject<HTMLSpanElement>}>0%</span>
+      </div>
+      <div className="console">
         <div className={'status ' + ui.statusKind}>
           <span className="status-dot" />
           <span id="statusText" key={ui.statusKey}>{ui.statusText}</span>

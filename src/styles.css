@@ -197,76 +197,98 @@ body.fs-rotate .room {
   box-sizing: border-box;
   max-height: 100vw;
 }
-/* 横屏简化:单栏布局,球台主区域占据全宽;希望的横向排列 */
+/* 横屏简化布局:frow;玩家卡极窄、力度条贴球台右侧纵向 */
 body.fs-rotate .arena {
   display: flex;
   flex-direction: row;
   align-items: stretch;
-  gap: 10px;
+  gap: 6px;
   min-height: 100vw;
 }
-/* 球台区占满可用宽度,左右玩家卡片缩小为窄条列 */
+/* 球台区占满中间剩余宽度 */
 body.fs-rotate .table-zone {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
-/* 两侧玩家卡片变为窄纵向列,与球台同高并排 */
+/* 两侧玩家卡片收窄为竖条列 */
 body.fs-rotate .arena .player-card {
-  flex: 0 0 118px;
-  padding: 8px 9px;
+  flex: 0 0 74px;
+  padding: 6px 4px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
-}
-body.fs-rotate .arena .player-card .pc-tray {
-  justify-content: center;
-  margin-top: 8px;
+  gap: 6px;
 }
 body.fs-rotate .arena .player-card .pc-head {
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
+  gap: 4px;
+}
+body.fs-rotate .arena .player-card .pc-chalk {
+  width: 12px;
+  height: 12px;
 }
 body.fs-rotate .arena .player-card .pc-name {
-  font-size: 15px;
-  letter-spacing: 0.5px;
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  font-size: 14px;
+  letter-spacing: 0;
+  line-height: 1.1;
+  max-height: 100px;
 }
 body.fs-rotate .arena .player-card .pc-chip {
   margin-left: 0;
-  font-size: 10px;
-  padding: 2px 6px;
+  font-size: 9px;
+  padding: 1px 4px;
+  letter-spacing: 0;
 }
 body.fs-rotate .arena .player-card .pc-group {
-  margin-top: 6px;
-  font-size: 11px;
-  padding: 4px 6px;
-  letter-spacing: 0.2px;
+  margin-top: 0;
+  font-size: 10px;
+  letter-spacing: 0;
+  padding: 3px 4px;
+  text-align: center;
+  line-height: 1.2;
 }
-/* 卡片下方原 meta 行在窄列纵向叠 */
+body.fs-rotate .arena .player-card .pc-tray {
+  justify-content: center;
+  gap: 4px;
+  margin-top: 0;
+}
+body.fs-rotate .arena .player-card .mini {
+  width: 19px;
+  height: 19px;
+}
+body.fs-rotate .arena .player-card .mini .num {
+  width: 10px;
+  height: 10px;
+  font-size: 7px;
+}
 body.fs-rotate .arena .player-card .pc-meta {
   flex-direction: column;
-  gap: 4px;
-  align-items: stretch;
+  gap: 3px;
+  margin-top: 0;
+  font-size: 10px;
+  align-items: center;
   text-align: center;
-  margin-top: 8px;
-  font-size: 11px;
 }
 body.fs-rotate .arena .player-card .pc-meta .pc-eight {
+  font-size: 9px;
+  padding: 1px 5px;
   text-align: center;
 }
-/* 隐藏标题区与提示行,横屏下挤压;控制台与回合横幅保留但压缩 */
-body.fs-rotate .marquee {
+/* 隐藏标题、分隔线、操作提示;控制台不单独展示(力度条移到球台侧) */
+body.fs-rotate .marquee,
+body.fs-rotate .divider,
+body.fs-rotate .hint-line,
+body.fs-rotate .console {
   display: none;
 }
-body.fs-rotate .divider {
-  display: none;
-}
-body.fs-rotate .hint-line {
-  display: none;
-}
+/* 回合横幅压缩 */
 body.fs-rotate .turn-banner {
   margin: 0 0 6px;
   padding: 4px 10px;
@@ -283,19 +305,7 @@ body.fs-rotate .tb-mid {
 body.fs-rotate .tb-score {
   font-size: 14px;
 }
-body.fs-rotate .console {
-  margin-top: 6px;
-  padding: 6px 10px;
-  gap: 10px;
-}
-body.fs-rotate .power-bar {
-  width: 140px;
-}
-body.fs-rotate .status {
-  min-width: 120px;
-  font-size: 12px;
-}
-/* 让球台本身尽量占宽:canvas 宽度跟 table-wrap 走 */
+/* 球台占满中间宽度 */
 body.fs-rotate .table-wrap {
   flex: 1 1 auto;
   display: flex;
@@ -306,4 +316,51 @@ body.fs-rotate canvas#table {
   width: 100%;
   height: auto;
   max-height: 100%;
+}
+/* 力度条:绝对定位贴在桌面区右侧边上,纵向展示。与玩家卡同高。 */
+body.fs-rotate .power-wrap {
+  position: absolute;
+  right: 6px;
+  top: 38px;             /* 避开顶部回合横幅 */
+  bottom: 8px;
+  width: 30px;
+  margin-top: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 4px;
+}
+body.fs-rotate .power-wrap .pw-label {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 1px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+body.fs-rotate .power-wrap .pw-val {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 13px;
+  width: auto;
+  min-width: 0;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+/* 纵向力度条容器:取球台高度与玩家卡之间的剩余空间 */
+body.fs-rotate .power-wrap .power-bar {
+  width: 14px;
+  height: clamp(150px, 30dvw, 320px);
+  position: relative;
+  overflow: hidden;
+}
+/* JS 仍在设 power-fill.style.width=p%,在纵向上改用高度:底部向上填充 */
+body.fs-rotate .power-wrap .power-fill {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100% !important;
+  height: var(--pw, 0%);
+  border-radius: 6px;
+  transition: height 0.05s linear, width 0s;
 }

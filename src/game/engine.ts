@@ -662,7 +662,9 @@ export class BilliardsEngine {
   updatePowerUI() {
     const p = this.state === 'charge' ? this.power : 0;
     if (p === this.lastPow) return; this.lastPow = p;
-    this.powerFillEl.style.width = (p * 100).toFixed(1) + '%';
+    const pct = (p * 100).toFixed(1) + '%';
+    this.powerFillEl.style.width = pct;          /* 案面纵向横条用 */
+    this.powerFillEl.style.setProperty('--pw', pct); /* 橫屏纵向轨迹用高度 */
     this.powerValEl.textContent = Math.round(p * 100) + '%';
     this.powerFillEl.classList.toggle('hot', p > 0.72);
   }
