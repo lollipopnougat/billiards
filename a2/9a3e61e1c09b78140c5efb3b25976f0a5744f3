@@ -1,0 +1,21 @@
+src/App.tsx
+  s_3a5a74d4878e8d::t_46b587f8df8897 53-54
+src/game/engine.ts
+  s_3a5a74d4878e8d::t_bee324ff41d34b 387-389,392-398
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "a29a3e61e1c09b78140c5efb3b25976f0a5744f3",
+  "prompts": {},
+  "sessions": {
+    "s_3a5a74d4878e8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9eb0-b46b-7fb6-81e5-041ecc00aa82",
+        "model": "glm-5.2"
+      },
+      "human_author": "lollipopnougat <ab2defg145@gmail.com>"
+    }
+  }
+}
