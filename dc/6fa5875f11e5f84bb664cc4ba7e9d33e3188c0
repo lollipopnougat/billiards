@@ -1,0 +1,33 @@
+src/styles.css
+  s_3a5a74d4878e8d::t_0afd34774d59c7 176-228
+  s_3a5a74d4878e8d::t_47983591240edc 175
+src/components/FullScreenButton/index.tsx
+  s_3a5a74d4878e8d::t_b5e0fd383b9cee 1-68
+src/App.tsx
+  s_3a5a74d4878e8d::t_bf28024cee0613 39
+  s_3a5a74d4878e8d::t_595baa942b73c0 11,49-53
+  s_3a5a74d4878e8d::t_32b94d6f75580d 92-97,136,141-142
+  s_3a5a74d4878e8d::t_632e1f532ddaf3 184
+src/game/engine.ts
+  s_3a5a74d4878e8d::t_c76149ca355318 64-66
+  s_3a5a74d4878e8d::t_a228d25a86582c 489
+  s_3a5a74d4878e8d::t_25a9f283fbbdf6 431,453,476
+src/components/FullScreenButton/FullScreenButton.css
+  s_3a5a74d4878e8d::t_beda02e18644f8 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "dc6fa5875f11e5f84bb664cc4ba7e9d33e3188c0",
+  "prompts": {},
+  "sessions": {
+    "s_3a5a74d4878e8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9eb0-b46b-7fb6-81e5-041ecc00aa82",
+        "model": "glm-5.2"
+      },
+      "human_author": "lollipopnougat <ab2defg145@gmail.com>"
+    }
+  }
+}
