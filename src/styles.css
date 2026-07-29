@@ -189,40 +189,121 @@ body.fs-rotate .room {
   left: 0;
   width: 100dvh;
   height: 100vw;
-  /* 注意:origin 必须在左上角;先 translateY(-100vw) 再 rotate,顺序不可乱 */
   transform-origin: 0 0;
   transform: rotate(90deg) translateY(-100vw);
-  /* 旋转后内容可能超出,允许内部滚动(双指/惯性) */
   overflow: auto;
-  /* 旋转后边距按视觉收紧 */
-  padding: 10px 16px 18px;
+  /* 收紧边距,把更多空间让给球台 */
+  padding: 6px 10px 12px;
   box-sizing: border-box;
-  /* 让水平滚动条/竖向尽量贴边 */
   max-height: 100vw;
 }
-/* 旋转模式下台球桌尽量占满可用高度:room 高=视口宽,
-   table-wrap 也应在卡片/控制台之外尽量高宽 */
+/* 横屏简化:单栏布局,球台主区域占据全宽;希望的横向排列 */
 body.fs-rotate .arena {
-  grid-template-columns: 200px minmax(0, 1fr) 200px;
-  gap: 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 10px;
+  min-height: 100vw;
 }
-/* 紧凑标题与按钮,最大化留出球台空间 */
-body.fs-rotate .marquee {
-  padding: 2px 2px 8px;
+/* 球台区占满可用宽度,左右玩家卡片缩小为窄条列 */
+body.fs-rotate .table-zone {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
-body.fs-rotate .sign h1 {
-  font-size: 22px;
-  letter-spacing: 2px;
-}
+/* 两侧玩家卡片变为窄纵向列,与球台同高并排 */
 body.fs-rotate .arena .player-card {
-  padding: 10px 10px 9px;
+  flex: 0 0 118px;
+  padding: 8px 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+body.fs-rotate .arena .player-card .pc-tray {
+  justify-content: center;
+  margin-top: 8px;
+}
+body.fs-rotate .arena .player-card .pc-head {
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+body.fs-rotate .arena .player-card .pc-name {
+  font-size: 15px;
+  letter-spacing: 0.5px;
+}
+body.fs-rotate .arena .player-card .pc-chip {
+  margin-left: 0;
+  font-size: 10px;
+  padding: 2px 6px;
+}
+body.fs-rotate .arena .player-card .pc-group {
+  margin-top: 6px;
+  font-size: 11px;
+  padding: 4px 6px;
+  letter-spacing: 0.2px;
+}
+/* 卡片下方原 meta 行在窄列纵向叠 */
+body.fs-rotate .arena .player-card .pc-meta {
+  flex-direction: column;
+  gap: 4px;
+  align-items: stretch;
+  text-align: center;
+  margin-top: 8px;
+  font-size: 11px;
+}
+body.fs-rotate .arena .player-card .pc-meta .pc-eight {
+  text-align: center;
+}
+/* 隐藏标题区与提示行,横屏下挤压;控制台与回合横幅保留但压缩 */
+body.fs-rotate .marquee {
+  display: none;
+}
+body.fs-rotate .divider {
+  display: none;
+}
+body.fs-rotate .hint-line {
+  display: none;
 }
 body.fs-rotate .turn-banner {
-  margin-bottom: 10px;
-  padding: 6px 10px;
+  margin: 0 0 6px;
+  padding: 4px 10px;
+  flex-wrap: nowrap;
+  min-height: 28px;
+}
+body.fs-rotate .turn-banner .tb-side {
+  display: none;
+}
+body.fs-rotate .tb-mid {
+  font-size: 15px;
+  letter-spacing: 1.5px;
+}
+body.fs-rotate .tb-score {
+  font-size: 14px;
 }
 body.fs-rotate .console {
-  margin-top: 8px;
-  padding: 8px 10px;
+  margin-top: 6px;
+  padding: 6px 10px;
+  gap: 10px;
 }
-/* 非全屏环境(老 iOS)也尽量横铺:用 100vh/vw 兜底;真正全屏后 dvh/vw 一致 */
+body.fs-rotate .power-bar {
+  width: 140px;
+}
+body.fs-rotate .status {
+  min-width: 120px;
+  font-size: 12px;
+}
+/* 让球台本身尽量占宽:canvas 宽度跟 table-wrap 走 */
+body.fs-rotate .table-wrap {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.fs-rotate canvas#table {
+  width: 100%;
+  height: auto;
+  max-height: 100%;
+}
