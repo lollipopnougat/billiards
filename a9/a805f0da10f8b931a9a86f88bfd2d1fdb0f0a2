@@ -1,0 +1,27 @@
+src/game/engine.ts
+  s_3a5a74d4878e8d::t_a25249eda1a88d 665-667
+src/styles.css
+  s_3a5a74d4878e8d::t_cdbebd96489338 200,205,208,214,216,218-219,224,227,229-233,236-241,245-247,250-269,273-276,280-281,284-288,291,308,320-366
+src/components/TableZone/index.tsx
+  s_3a5a74d4878e8d::t_0d0b91fe462af3 40-44,46-48
+src/components/TableZone/TableZone.css
+  s_3a5a74d4878e8d::t_7b513c32d3ad16 62-66
+  s_3a5a74d4878e8d::t_e489a9e180ade7 38,41-43,45-50,56
+  s_3a5a74d4878e8d::t_817feac52e5348 178-181,190,193-196
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "a9a805f0da10f8b931a9a86f88bfd2d1fdb0f0a2",
+  "prompts": {},
+  "sessions": {
+    "s_3a5a74d4878e8d": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019f9eb0-b46b-7fb6-81e5-041ecc00aa82",
+        "model": "glm-5.2"
+      },
+      "human_author": "lollipopnougat <ab2defg145@gmail.com>"
+    }
+  }
+}
