@@ -29,25 +29,25 @@ export interface AIDifficulty {
 
 export const DIFFICULTIES: Record<'easy' | 'medium' | 'hard' | 'master', AIDifficulty> = {
   easy: {
-    label: '简单', angleNoiseRad: 1.7 * DEG, powerNoise: 0.09, cutMaxRad: 64 * DEG,
+    label: '简单', angleNoiseRad: 1.5 * DEG, powerNoise: 0.09, cutMaxRad: 64 * DEG,
     middlePocketPenalty: 0.7, proactiveSafety: false, washRiskAvoid: false,
     randomPickTopN: 2, positionWeight: 0, lookahead: false, lookBonus: 0, lookPenalty: 0,
     thinkMs: 480, placeMs: 300, chargeViewMs: 360, breakPower: 0.78,
   },
   medium: {
-    label: '中等', angleNoiseRad: 0.95 * DEG, powerNoise: 0.05, cutMaxRad: 58 * DEG,
+    label: '中等', angleNoiseRad: 0.75 * DEG, powerNoise: 0.05, cutMaxRad: 58 * DEG,
     middlePocketPenalty: 1.0, proactiveSafety: true, washRiskAvoid: true,
     randomPickTopN: 1, positionWeight: 0.7, lookahead: false, lookBonus: 0, lookPenalty: 0,
     thinkMs: 640, placeMs: 400, chargeViewMs: 420, breakPower: 0.82,
   },
   hard: {
-    label: '困难', angleNoiseRad: 0.45 * DEG, powerNoise: 0.025, cutMaxRad: 50 * DEG,
+    label: '困难', angleNoiseRad: 0.25 * DEG, powerNoise: 0.025, cutMaxRad: 50 * DEG,
     middlePocketPenalty: 1.2, proactiveSafety: true, washRiskAvoid: true,
     randomPickTopN: 1, positionWeight: 1.6, lookahead: true, lookBonus: 14, lookPenalty: 6,
     thinkMs: 740, placeMs: 480, chargeViewMs: 450, breakPower: 0.84,
   },
   master: {
-    label: '大师', angleNoiseRad: 0.2 * DEG, powerNoise: 0.012, cutMaxRad: 44 * DEG,
+    label: '大师', angleNoiseRad: 0.08 * DEG, powerNoise: 0.011, cutMaxRad: 44 * DEG,
     middlePocketPenalty: 1.4, proactiveSafety: true, washRiskAvoid: true,
     randomPickTopN: 1, positionWeight: 2.6, lookahead: true, lookBonus: 22, lookPenalty: 9,
     thinkMs: 860, placeMs: 520, chargeViewMs: 520, breakPower: 0.86,

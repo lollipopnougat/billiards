@@ -6,16 +6,42 @@ interface Props {
   onToggleRotate: (v: boolean) => void;
 }
 
+function lockOrientation() {
+  try {
+    const orient = screen.orientation as { lock?: (o: string) => Promise<void> };
+    if (orient?.lock) {
+      orient.lock('portrait').catch(() => { /* ignore */ });
+    }
+  } catch { /* ignore */ }
+}
+function unlockOrientation() {
+  try {
+    const orient = screen.orientation as { unlock?: () => void };
+    orient?.unlock?.();
+  } catch { /* ignore */ }
+}
+
 function requestFullscreen(el: Element) {
   if (document.fullscreenElement) return;
   const anyEl = el as Element & { webkitRequestFullscreen?: () => Promise<void> };
   const req = el.requestFullscreen || anyEl.webkitRequestFullscreen;
-  if (req) { try { req.call(el); } catch { /* ignore */ } }
+  if (req) {
+    try {
+      const p = req.call(el);
+      if (p instanceof Promise) p.then(() => lockOrientation()).catch(() => {});
+      else lockOrientation();
+    } catch { /* ignore */ }
+  }
 }
 function exitFullscreen() {
   const doc = document as Document & { webkitExitFullscreen?: () => Promise<void> };
   const ex = document.exitFullscreen || doc.webkitExitFullscreen;
-  if (document.fullscreenElement && ex) { try { ex.call(document); } catch { /* ignore */ } }
+  if (document.fullscreenElement && ex) {
+    try {
+      unlockOrientation();
+      ex.call(document);
+    } catch { /* ignore */ }
+  }
 }
 
 export default function FullScreenButton({ rotated, onToggleRotate }: Props) {
@@ -44,9 +70,9 @@ export default function FullScreenButton({ rotated, onToggleRotate }: Props) {
     <button
       className={'btn fs-btn' + (active ? ' on' : '')}
       onClick={active ? exit : enter}
-      aria-label={active ? '退出横屏全屏' : '横屏全屏'}
+      aria-label={active ? '退出竖屏全屏' : '竖屏全屏'}
     >
-      {active ? '⤢ 退出横屏' : '⤡ 横屏全屏'}
+      {active ? '⤢ 退出全屏' : '⤡ 竖屏全屏'}
     </button>
   );
 }
