@@ -1,0 +1,25 @@
+src/game/ai.ts
+  s_2fa8161d4576c8::t_f336460b529ffe 228
+  h_cc604c9bda8355 32,38,44,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "3aa2b9462ec8cbd979f45466fb866c56f1fcff78",
+  "prompts": {},
+  "humans": {
+    "h_cc604c9bda8355": {
+      "author": "lollipopnougat <ab2defg145@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2fa8161d4576c8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fb3db-1c7a-7a64-af2a-e3c1060860d6",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "lollipopnougat <ab2defg145@gmail.com>"
+    }
+  }
+}
