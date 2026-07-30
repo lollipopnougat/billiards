@@ -1,0 +1,28 @@
+src/components/FullScreenButton/index.tsx
+  s_2fa8161d4576c8::t_a0257995d2fbdd 19
+  s_2fa8161d4576c8::t_3e14b321caf6a4 9-10,12-18,20-23,28-34,39-44,73,75
+  s_2fa8161d4576c8::t_4a013301b53c4e 11
+src/game/ai.ts
+  h_cc604c9bda8355 32,38,44,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.16",
+  "base_commit_sha": "2b188c86d7a932847c7c2f9aeb9a505d794f1ade",
+  "prompts": {},
+  "humans": {
+    "h_cc604c9bda8355": {
+      "author": "lollipopnougat <ab2defg145@gmail.com>"
+    }
+  },
+  "sessions": {
+    "s_2fa8161d4576c8": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "019fb3db-1c7a-7a64-af2a-e3c1060860d6",
+        "model": "deepseek-v4-pro"
+      },
+      "human_author": "lollipopnougat <ab2defg145@gmail.com>"
+    }
+  }
+}
